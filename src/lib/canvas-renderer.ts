@@ -39,6 +39,56 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
 }
 
 /**
+ * Validates binary signature of a Blob to guarantee it contains authentic PNG or JPEG bytes.
+ * PNG magic bytes: 89 50 4E 47 0D 0A 1A 0A
+ * JPEG magic bytes: FF D8 FF
+ */
+async function validateImageBinary(
+  blob: Blob,
+  expectedFormat: 'png' | 'jpg'
+): Promise<{ valid: boolean; detectedFormat: string; signatureHex: string; sampleText: string }> {
+  const buffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+
+  const hexArray: string[] = [];
+  const maxHeader = Math.min(bytes.length, 12);
+  for (let i = 0; i < maxHeader; i++) {
+    hexArray.push(bytes[i].toString(16).padStart(2, '0').toUpperCase());
+  }
+  const signatureHex = hexArray.join(' ');
+
+  let sampleText = '';
+  try {
+    const textDecoder = new TextDecoder('utf-8');
+    sampleText = textDecoder.decode(bytes.subarray(0, 100));
+  } catch {
+    sampleText = '';
+  }
+
+  const isPng =
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47 &&
+    bytes[4] === 0x0d &&
+    bytes[5] === 0x0a &&
+    bytes[6] === 0x1a &&
+    bytes[7] === 0x0a;
+
+  const isJpeg =
+    bytes.length >= 3 &&
+    bytes[0] === 0xff &&
+    bytes[1] === 0xd8 &&
+    bytes[2] === 0xff;
+
+  const valid = (expectedFormat === 'png' && isPng) || (expectedFormat === 'jpg' && isJpeg);
+  const detectedFormat = isPng ? 'image/png' : isJpeg ? 'image/jpeg' : 'non-image/text/html/json';
+
+  return { valid, detectedFormat, signatureHex, sampleText };
+}
+
+/**
  * Render ID Card to base64 Data URL (used for preview / legacy calls)
  */
 export async function renderIDCard(options: RenderOptions): Promise<string> {
@@ -197,8 +247,9 @@ export async function renderIDCard(options: RenderOptions): Promise<string> {
 }
 
 /**
- * Direct, verified binary Blob export & download pipeline.
- * Guarantees valid PNG or JPEG image files with clean filenames (HH-GOA-2026-[NAME].ext).
+ * Direct, binary-validated export & download pipeline.
+ * Performs byte-level signature verification before allowing browser download.
+ * Formats clean filenames: HH-GOA-2026-[NAME].png or HH-GOA-2026-[NAME].jpg
  */
 export function exportIDCard(
   options: RenderOptions,
@@ -211,7 +262,7 @@ export function exportIDCard(
       const mimeType = isJpeg ? 'image/jpeg' : 'image/png';
       const ext = isJpeg ? 'jpg' : 'png';
 
-      // 1. Build standardized filename: HH-GOA-2026-[NAME].[ext]
+      // 1. Format clean filename: HH-GOA-2026-[NAME].[ext]
       const cleanName = (options.name || 'BUILDER')
         .trim()
         .toUpperCase()
@@ -221,7 +272,7 @@ export function exportIDCard(
 
       const filename = `HH-GOA-2026-${cleanName || 'BUILDER'}.${ext}`;
 
-      // 2. Render canvas
+      // 2. Render canvas at 1200x1600
       const canvas = document.createElement('canvas');
       canvas.width = CANVAS_W;
       canvas.height = CANVAS_H;
@@ -231,7 +282,7 @@ export function exportIDCard(
       ctx.fillStyle = '#163D28';
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-      // Outer & Inner Borders
+      // Borders
       ctx.strokeStyle = '#17251C';
       ctx.lineWidth = 16;
       ctx.strokeRect(8, 8, CANVAS_W - 16, CANVAS_H - 16);
@@ -364,9 +415,9 @@ export function exportIDCard(
         barcodeX += b + 4;
       }
 
-      // 3. Native canvas.toBlob export with strict MIME-type and size validation
+      // 3. Export to Blob directly with strict byte-level signature verification
       canvas.toBlob(
-        (blob) => {
+        async (blob) => {
           if (!blob) {
             const err = new Error(`[Canvas Export Error]: Failed to create Blob for ${mimeType}`);
             console.error(err);
@@ -381,9 +432,22 @@ export function exportIDCard(
             return;
           }
 
-          console.log(`[Export Verified]: MIME=${blob.type}, Size=${blob.size} bytes, Filename=${filename}`);
+          // Step 3 & Step 7: Byte-level signature check
+          const signatureResult = await validateImageBinary(blob, ext as 'png' | 'jpg');
+          console.log(
+            `[Export Diagnostic]: MIME=${blob.type}, Size=${blob.size} bytes, ValidSignature=${signatureResult.valid}, Detected=${signatureResult.detectedFormat}, MagicBytes=${signatureResult.signatureHex}`
+          );
 
-          // Trigger native download
+          if (!signatureResult.valid) {
+            const err = new Error(
+              `[Export Validation Failed]: Received ${signatureResult.detectedFormat} payload instead of ${mimeType}. Header: ${signatureResult.signatureHex}. Sample: ${signatureResult.sampleText.slice(0, 50)}`
+            );
+            console.error(err);
+            reject(err);
+            return;
+          }
+
+          // Step 9: Verified download
           const blobUrl = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.style.display = 'none';
