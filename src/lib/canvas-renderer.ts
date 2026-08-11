@@ -76,6 +76,113 @@ function getVibeColors(vibe: string = 'forest-wave') {
   };
 }
 
+/**
+ * Render Vibe-Specific Background Artworks
+ */
+function drawVibeBackground(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  vibe: string,
+  colors: ReturnType<typeof getVibeColors>
+) {
+  const v = (vibe || 'forest-wave').toLowerCase();
+
+  // 1. FOREST WAVE: Goa Tropical Forest, Ocean Waves & Botanical Leaf Patterns
+  if (v.includes('forest')) {
+    ctx.fillStyle = colors.bg;
+    ctx.fillRect(0, 0, width, height);
+
+    // Ocean Wave Curves Overlay
+    ctx.strokeStyle = 'rgba(245, 221, 59, 0.15)';
+    ctx.lineWidth = 3;
+    for (let y = 120; y < height; y += 180) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.bezierCurveTo(width * 0.25, y - 40, width * 0.5, y + 40, width * 0.75, y - 20);
+      ctx.bezierCurveTo(width * 0.85, y - 10, width * 0.95, y + 10, width, y);
+      ctx.stroke();
+    }
+
+    // Tropical Leaf Silhouettes
+    ctx.fillStyle = 'rgba(15, 46, 29, 0.45)';
+    ctx.beginPath();
+    ctx.ellipse(100, 100, 160, 70, Math.PI / 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.ellipse(width - 120, height - 120, 180, 80, -Math.PI / 3, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+
+  // 2. SUNBURST: Goa Sunburst Rays Radiating & Radiant Sunrise Gradient
+  if (v.includes('sunburst')) {
+    const grad = ctx.createLinearGradient(0, 0, width, height);
+    grad.addColorStop(0, '#D97706');
+    grad.addColorStop(0.5, '#C77D0A');
+    grad.addColorStop(1, '#92400E');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, height);
+
+    const centerX = width / 2;
+    const centerY = height / 3;
+    const rayCount = 24;
+    const angleStep = (Math.PI * 2) / rayCount;
+
+    for (let i = 0; i < rayCount; i += 2) {
+      const startAngle = i * angleStep;
+      const endAngle = (i + 1) * angleStep;
+
+      ctx.fillStyle = i % 4 === 0 ? 'rgba(253, 224, 71, 0.18)' : 'rgba(251, 191, 36, 0.09)';
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, Math.max(width, height) * 1.5, startAngle, endAngle);
+      ctx.closePath();
+      ctx.fill();
+    }
+    return;
+  }
+
+  // 3. SUNSET PINK: Warm Goa Evening Sunset Gradient & Starry Horizon
+  if (v.includes('sunset')) {
+    const grad = ctx.createLinearGradient(0, 0, 0, height);
+    grad.addColorStop(0, '#E11D48');
+    grad.addColorStop(0.5, '#BE123C');
+    grad.addColorStop(1, '#6B21A8');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Goa Sunset Horizon Sun Glow
+    const sunGrad = ctx.createRadialGradient(width / 2, height * 0.7, 50, width / 2, height * 0.7, 480);
+    sunGrad.addColorStop(0, 'rgba(245, 221, 59, 0.35)');
+    sunGrad.addColorStop(1, 'rgba(190, 18, 60, 0)');
+    ctx.fillStyle = sunGrad;
+    ctx.beginPath();
+    ctx.arc(width / 2, height * 0.7, 480, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Starry Sky Sparkles
+    ctx.fillStyle = 'rgba(255, 241, 242, 0.65)';
+    const stars = [
+      { x: width * 0.12, y: height * 0.12, r: 3 },
+      { x: width * 0.85, y: height * 0.1, r: 4 },
+      { x: width * 0.88, y: height * 0.25, r: 2 },
+      { x: width * 0.1, y: height * 0.32, r: 3.5 },
+      { x: width * 0.78, y: height * 0.42, r: 2.5 },
+    ];
+    for (const star of stars) {
+      ctx.beginPath();
+      ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return;
+  }
+
+  ctx.fillStyle = colors.bg;
+  ctx.fillRect(0, 0, width, height);
+}
+
 async function validateImageBinary(
   blob: Blob,
   expectedFormat: 'png' | 'jpg'
@@ -137,15 +244,14 @@ async function drawCardOnCanvas(canvas: HTMLCanvasElement, options: RenderOption
   const imgObj = options.photo ? await loadImage(options.photo) : null;
 
   // -------------------------------------------------------------
-  // FORMAT 01: LANDSCAPE (1600 x 1000)
+  // FORMAT 02: LANDSCAPE (1600 x 1000)
   // -------------------------------------------------------------
   if (fmt === 'landscape') {
     canvas.width = 1600;
     canvas.height = 1000;
 
-    // Background & Borders
-    ctx.fillStyle = colors.bg;
-    ctx.fillRect(0, 0, 1600, 1000);
+    // Draw Vibe Background Artwork
+    drawVibeBackground(ctx, 1600, 1000, vibeKey, colors);
 
     ctx.strokeStyle = colors.borderOuter;
     ctx.lineWidth = 16;
@@ -247,8 +353,7 @@ async function drawCardOnCanvas(canvas: HTMLCanvasElement, options: RenderOption
     canvas.width = 1200;
     canvas.height = 1200;
 
-    ctx.fillStyle = colors.bg;
-    ctx.fillRect(0, 0, 1200, 1200);
+    drawVibeBackground(ctx, 1200, 1200, vibeKey, colors);
 
     // Outer Circle Ring
     ctx.strokeStyle = colors.borderInner;
@@ -260,7 +365,7 @@ async function drawCardOnCanvas(canvas: HTMLCanvasElement, options: RenderOption
     // Circular Photo
     const cRadius = 340;
     const cX = 600;
-    const cY = 500;
+    const cY = 480;
 
     ctx.save();
     ctx.beginPath();
@@ -303,10 +408,9 @@ async function drawCardOnCanvas(canvas: HTMLCanvasElement, options: RenderOption
     canvas.width = 1200;
     canvas.height = 1500;
 
-    ctx.fillStyle = colors.bg;
-    ctx.fillRect(0, 0, 1200, 1500);
+    drawVibeBackground(ctx, 1200, 1500, vibeKey, colors);
 
-    // Arch Outer Frame
+    // Arch Outer Frame Path
     ctx.strokeStyle = colors.borderInner;
     ctx.lineWidth = 12;
     ctx.beginPath();
@@ -364,33 +468,26 @@ async function drawCardOnCanvas(canvas: HTMLCanvasElement, options: RenderOption
   }
 
   // -------------------------------------------------------------
-  // FORMAT 05: SLIM BADGE (800 x 1600)
+  // FORMAT 05: SLIM BADGE (1600 x 700 — Narrow Horizontal Badge)
   // -------------------------------------------------------------
   if (fmt === 'slim') {
-    canvas.width = 800;
-    canvas.height = 1600;
+    canvas.width = 1600;
+    canvas.height = 700;
 
-    ctx.fillStyle = colors.bg;
-    ctx.fillRect(0, 0, 800, 1600);
+    drawVibeBackground(ctx, 1600, 700, vibeKey, colors);
 
     ctx.strokeStyle = colors.borderOuter;
     ctx.lineWidth = 14;
-    ctx.strokeRect(7, 7, 786, 1586);
+    ctx.strokeRect(7, 7, 1586, 686);
 
     ctx.strokeStyle = colors.borderInner;
     ctx.lineWidth = 4;
-    ctx.strokeRect(24, 24, 752, 1552);
+    ctx.strokeRect(24, 24, 1552, 652);
 
-    // Slim Header
-    ctx.fillStyle = colors.primaryText;
-    ctx.font = '900 60px serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('HH GOA', 400, 120);
-
-    // Photo Box Center
-    const pSize = 620;
-    const pX = 90;
-    const pY = 170;
+    // Photo Box Left
+    const pSize = 520;
+    const pX = 60;
+    const pY = 90;
 
     ctx.fillStyle = colors.photoBoxBg;
     ctx.fillRect(pX, pY, pSize, pSize);
@@ -407,27 +504,37 @@ async function drawCardOnCanvas(canvas: HTMLCanvasElement, options: RenderOption
       ctx.restore();
     }
 
-    // Name & Details
-    let iY = pY + pSize + 85;
-    ctx.fillStyle = colors.primaryText;
-    ctx.font = '900 52px serif';
-    ctx.fillText(nameVal, 400, iY);
+    // Right Column Info
+    const rX = 640;
+    let rY = 170;
 
-    iY += 55;
+    ctx.fillStyle = colors.primaryText;
+    ctx.font = '900 60px serif';
+    ctx.fillText(nameVal, rX, rY);
+
+    rY += 55;
     ctx.fillStyle = colors.secondaryText;
-    ctx.font = '600 24px monospace';
-    ctx.fillText(stackVal, 400, iY);
+    ctx.font = '600 28px monospace';
+    ctx.fillText(stackVal, rX, rY);
 
-    iY += 60;
+    rY += 60;
     ctx.fillStyle = colors.primaryText;
-    ctx.font = '800 30px monospace';
-    ctx.fillText(`⚡ ${classVal}`, 400, iY);
+    ctx.font = '800 34px monospace';
+    ctx.fillText(`⚡ ${classVal}`, rX, rY);
 
-    iY += 80;
+    rY += 75;
     ctx.fillStyle = colors.secondaryText;
     ctx.font = '800 38px monospace';
-    ctx.fillText(idVal, 400, iY);
-    ctx.textAlign = 'left';
+    ctx.fillText(idVal, rX, rY);
+
+    // Barcode Bottom Right
+    let bx = 1200;
+    const bars = [4, 2, 6, 2, 4, 8, 2, 4, 2, 6, 4, 2, 8, 2, 4, 6];
+    ctx.fillStyle = colors.secondaryText;
+    for (const b of bars) {
+      ctx.fillRect(bx, 540, b, 45);
+      bx += b + 4;
+    }
     return;
   }
 
@@ -437,9 +544,7 @@ async function drawCardOnCanvas(canvas: HTMLCanvasElement, options: RenderOption
   canvas.width = 1200;
   canvas.height = 1600;
 
-  // Background & Borders
-  ctx.fillStyle = colors.bg;
-  ctx.fillRect(0, 0, 1200, 1600);
+  drawVibeBackground(ctx, 1200, 1600, vibeKey, colors);
 
   ctx.strokeStyle = colors.borderOuter;
   ctx.lineWidth = 16;

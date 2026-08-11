@@ -226,6 +226,9 @@ export default function FrameSelectPage() {
                     onClick={() => {
                       setSelectedFormat(fmt.id);
                       setValidationError(null);
+                      if (typeof window !== 'undefined') {
+                        localStorage.setItem('hh_builder_format', fmt.id);
+                      }
                     }}
                     className={`bg-[#163D28] text-[#F6F0D8] border-2 border-[#17251C] rounded-lg p-4 flex flex-col justify-between cursor-pointer transition-all duration-200 ${
                       isSelected

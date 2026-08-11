@@ -346,7 +346,12 @@ export default function PersonalizeStepPage() {
                     return (
                       <div
                         key={palette.id}
-                        onClick={() => setSelectedPalette(palette.id)}
+                        onClick={() => {
+                          setSelectedPalette(palette.id);
+                          if (typeof window !== 'undefined') {
+                            localStorage.setItem('hh_builder_palette', palette.id);
+                          }
+                        }}
                         className={`bg-[#0F2E1D] border-2 rounded-md p-3 cursor-pointer transition-all flex flex-col justify-between ${
                           isSelected
                             ? 'border-[#F5DD3B] ring-2 ring-[#F5DD3B]/50 shadow-[4px_4px_0px_#17251C]'

@@ -41,6 +41,8 @@ export default function DetailsStepPage() {
 
   // Input states
   const [name, setName] = useState('PRIYANSHU KHARE');
+  const [stackTags, setStackTags] = useState<string[]>(['AI/ML', 'PYTHON', 'NEXT.JS']);
+  const [tagInput, setTagInput] = useState('');
   const [stack, setStack] = useState('AI/ML // PYTHON // NEXT.JS');
   const [teamName, setTeamName] = useState('ALPHA SQUAD');
 
@@ -58,7 +60,11 @@ export default function DetailsStepPage() {
       if (savedName) setName(savedName);
 
       const savedStack = localStorage.getItem('hh_builder_stack');
-      if (savedStack) setStack(savedStack);
+      if (savedStack) {
+        setStack(savedStack);
+        const parsed = savedStack.split('//').map((s) => s.trim()).filter(Boolean);
+        if (parsed.length > 0) setStackTags(parsed);
+      }
 
       const savedTeam = localStorage.getItem('hh_builder_team');
       if (savedTeam) setTeamName(savedTeam);
@@ -67,6 +73,35 @@ export default function DetailsStepPage() {
       if (savedClassIdx) setClassIndex(parseInt(savedClassIdx, 10));
     }
   }, []);
+
+  // Handle adding technology tag
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const trimmed = tagInput.trim().toUpperCase().replace(/,/g, '');
+      if (trimmed && !stackTags.includes(trimmed)) {
+        const updated = [...stackTags, trimmed];
+        setStackTags(updated);
+        const joined = updated.join(' // ');
+        setStack(joined);
+        setTagInput('');
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('hh_builder_stack', joined);
+        }
+      }
+    }
+  };
+
+  // Handle removing technology tag
+  const handleRemoveTag = (tagToRemove: string) => {
+    const updated = stackTags.filter((t) => t !== tagToRemove);
+    setStackTags(updated);
+    const joined = updated.join(' // ');
+    setStack(joined);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hh_builder_stack', joined);
+    }
+  };
 
   // Handle Reroll class
   const handleRerollClass = () => {
@@ -86,9 +121,10 @@ export default function DetailsStepPage() {
 
   // Save details and proceed to Step 03: Frame
   const handleProceedNext = () => {
+    const finalStack = stackTags.length > 0 ? stackTags.join(' // ') : stack;
     if (typeof window !== 'undefined') {
       localStorage.setItem('hh_builder_name', name);
-      localStorage.setItem('hh_builder_stack', stack);
+      localStorage.setItem('hh_builder_stack', finalStack);
       localStorage.setItem('hh_builder_team', teamName);
       localStorage.setItem('hh_builder_class', currentClass.label);
       localStorage.setItem('hh_builder_class_icon', currentClass.icon);
@@ -214,20 +250,43 @@ export default function DetailsStepPage() {
                     />
                   </div>
 
-                  {/* YOUR STACK / ROLE */}
+                  {/* YOUR STACK / TECHNOLOGIES (Removable Tags Input) */}
                   <div>
                     <label className="block font-mono text-[10.5px] font-extrabold uppercase tracking-wider text-[#17251C] mb-1.5">
-                      YOUR STACK / ROLE
+                      YOUR STACK / TECHNOLOGIES
                     </label>
+
+                    {/* Selected Tags Badge Container */}
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {stackTags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#163D28] text-[#F5DD3B] font-mono text-xs font-bold rounded border border-[#17251C] shadow-[2px_2px_0px_#17251C]"
+                        >
+                          <span>{tag}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTag(tag)}
+                            className="text-[#E62E78] font-black hover:text-[#FAF7ED] transition-colors ml-1 cursor-pointer"
+                            aria-label={`Remove ${tag}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Tag Input Field */}
                     <input
                       type="text"
-                      value={stack}
-                      onChange={(e) => setStack(e.target.value.toUpperCase())}
-                      placeholder="AI/ML // PYTHON // NEXT.JS"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleAddTag}
+                      placeholder="Type tech (e.g. REACT) and press Enter"
                       className="w-full bg-[#FAF7ED] text-[#17251C] border-2 border-[#17251C] rounded px-3.5 py-2.5 font-mono text-xs font-semibold focus:outline-none focus:border-[#E62E78] shadow-[2px_2px_0px_#17251C]"
                     />
                     <p className="font-mono text-[10px] text-[#17251C]/50 mt-1.5">
-                      Tell us what you build with.
+                      Press Enter or comma to add a tech tag. Click × to remove.
                     </p>
                   </div>
                 </div>
@@ -260,18 +319,15 @@ export default function DetailsStepPage() {
                       <h4 className="font-display font-black text-xl text-[#F5DD3B] uppercase tracking-tight mb-2">
                         {currentClass.label}
                       </h4>
-                      <div className="w-12 h-0.5 bg-[#E62E78] mx-auto mb-3" />
-                      <div className="font-mono text-[9px] text-[#F6F0D8]/50 uppercase tracking-widest">
-                        CLASS 0{classIndex + 1} OF 10
-                      </div>
+                      <p className="font-mono text-[10px] text-[#F6F0D8]/60 uppercase">
+                        CLASS 0{classIndex + 1} // HACKER HOUSE GOA
+                      </p>
                     </motion.div>
                   </AnimatePresence>
 
-                  {/* Background Palm Silhouette overlay */}
-                  <div className="absolute inset-0 pointer-events-none opacity-10 flex items-end justify-center">
-                    <svg viewBox="0 0 100 40" className="w-full h-10" fill="currentColor">
-                      <path d="M10 40 L20 20 L30 40 M50 40 L60 15 L70 40 M80 40 L85 25 L90 40" />
-                    </svg>
+                  {/* Stamp top right */}
+                  <div className="absolute top-2 right-2 w-8 h-8 rounded-full border border-dashed border-[#F5DD3B]/40 text-[#F5DD3B] font-mono text-[6px] flex items-center justify-center text-center rotate-[-12deg]">
+                    GOA<br />2026
                   </div>
                 </div>
 
@@ -279,85 +335,58 @@ export default function DetailsStepPage() {
                 <button
                   onClick={handleRerollClass}
                   disabled={isRolling}
-                  className="w-full py-2.5 bg-[#FAF7ED] text-[#17251C] font-mono text-xs font-bold uppercase tracking-wider border-2 border-[#17251C] shadow-[2px_2px_0px_#17251C] hover:bg-[#F5DD3B] transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#FAF7ED] hover:bg-[#F5DD3B] text-[#17251C] font-mono text-xs font-extrabold uppercase tracking-wider border-2 border-[#17251C] shadow-[3px_3px_0px_#17251C] active:translate-x-[1px] active:translate-y-[1px] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  REROLL CLASS <span className={`text-sm ${isRolling ? 'animate-spin' : ''}`}>↻</span>
+                  <span>🎲</span>
+                  <span>{isRolling ? 'ROLLING...' : 'REROLL CLASS'}</span>
                 </button>
               </div>
 
-              {/* ── COLUMN 3: LIVE LANYARD PASS PREVIEW ── */}
-              <div className="relative flex flex-col items-center">
-                {/* Lanyard String Artwork Hanging from Top */}
-                <div className="w-full flex justify-center mb-[-8px] relative z-20">
-                  <div className="flex gap-4">
-                    <div className="w-1 h-12 bg-gradient-to-b from-[#17251C] via-[#F5DD3B]/60 to-[#17251C] rounded-full shadow-sm" />
-                    <div className="w-1 h-12 bg-gradient-to-b from-[#17251C] via-[#F5DD3B]/60 to-[#17251C] rounded-full shadow-sm" />
-                  </div>
+              {/* ── COLUMN 3: LIVE PREVIEW CARD ── */}
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="font-mono text-[11px] font-extrabold uppercase tracking-wider text-[#17251C]">
+                    LIVE BUILDER ID PREVIEW
+                  </h3>
+                  <span className="font-mono text-[9px] text-[#E62E78] font-bold uppercase animate-pulse">
+                    ● LIVE
+                  </span>
                 </div>
 
-                {/* Lanyard Pass Card */}
-                <div className="w-full max-w-[320px] bg-[#163D28] text-[#F6F0D8] border-2 border-[#17251C] rounded-lg p-5 shadow-[6px_6px_0px_#17251C] relative overflow-hidden">
-
-                  {/* Lanyard Hole Punch */}
-                  <div className="w-8 h-3 rounded-full bg-[#FAF7ED] border border-[#17251C] mx-auto mb-3" />
-
-                  {/* Header */}
-                  <div className="flex items-center justify-between border-b border-[#F6F0D8]/15 pb-2 mb-3">
-                    <span className="font-display text-xs font-black text-[#F5DD3B]">
-                      HH GOA 2026
-                    </span>
-                    <span className="font-mono text-[8px] font-bold text-[#F6F0D8]/50 uppercase tracking-widest">
-                      PREVIEW
-                    </span>
+                {/* Card Preview Container */}
+                <div className="bg-[#163D28] text-[#F6F0D8] border-2 border-[#17251C] rounded-lg p-5 shadow-[6px_6px_0px_#17251C] relative overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-[#F6F0D8]/15 pb-2 mb-4 font-mono text-[9px]">
+                    <span className="font-display font-black text-[#F5DD3B] text-sm">HH GOA 2026</span>
+                    <span className="text-[#F6F0D8]/50 uppercase font-bold">BUILDER ID</span>
                   </div>
 
-                  {/* Photo with Circular Stamp */}
-                  <div className="relative aspect-[4/3] rounded border border-[#F6F0D8]/20 overflow-hidden mb-4 bg-[#0F2E1D]">
-                    <Image
-                      src={mode === 'squad' ? '/builder-squad.png' : '/builder-solo.png'}
-                      alt="Builder preview photo"
-                      fill
-                      className="object-cover"
-                    />
+                  <div className="space-y-3">
+                    <div>
+                      <div className="font-mono text-[9px] text-[#F6F0D8]/50 uppercase font-bold">NAME</div>
+                      <div className="font-display font-black text-xl text-[#F5DD3B] uppercase truncate">
+                        {name || 'YOUR NAME'}
+                      </div>
+                    </div>
 
-                    {/* Gold Circular Stamp in Bottom Right */}
-                    <div className="absolute bottom-2 right-2 w-11 h-11 rounded-full border border-dashed border-[#F5DD3B] bg-[#163D28]/85 text-center flex items-center justify-center p-0.5 rotate-[-8deg]">
-                      <div className="font-mono text-[5.5px] font-extrabold text-[#F5DD3B] uppercase leading-tight">
-                        BUILDER<br />
-                        <span className="font-serif text-[8px] italic text-[#F6F0D8]">GOA</span><br />
-                        2026
+                    <div>
+                      <div className="font-mono text-[9px] text-[#F6F0D8]/50 uppercase font-bold">STACK / TECH</div>
+                      <div className="font-mono text-xs text-[#F6F0D8] uppercase font-semibold truncate">
+                        {stackTags.length > 0 ? stackTags.join(' // ') : 'ADD YOUR TECH STACK'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="font-mono text-[9px] text-[#F6F0D8]/50 uppercase font-bold">CLASS</div>
+                      <div className="font-mono text-xs text-[#F5DD3B] uppercase font-bold">
+                        ⚡ {currentClass.label}
                       </div>
                     </div>
                   </div>
 
-                  {/* Live Details */}
-                  <div className="space-y-1.5 mb-4">
-                    <h3 className="font-display font-black text-lg text-[#F5DD3B] uppercase tracking-tight leading-none truncate">
-                      {name || 'YOUR NAME'}
-                    </h3>
-                    <p className="font-mono text-[9.5px] text-[#F6F0D8]/70 truncate uppercase">
-                      {stack || 'YOUR STACK / ROLE'}
-                    </p>
-                    <div className="inline-flex items-center gap-1 font-mono text-[9px] font-bold text-[#F5DD3B] bg-[#0F2E1D] px-2 py-0.5 rounded border border-[#F5DD3B]/30">
-                      <span>{currentClass.icon}</span>
-                      <span>{currentClass.label}</span>
-                    </div>
+                  <div className="mt-4 pt-3 border-t border-[#F6F0D8]/15 flex items-center justify-between font-mono text-[8.5px] text-[#F6F0D8]/50">
+                    <span>GOA, INDIA</span>
+                    <span className="text-[#F5DD3B] font-bold">PREVIEW ONLY</span>
                   </div>
-
-                  {/* Serial ID & Barcode */}
-                  <div className="flex items-center justify-between border-t border-[#F6F0D8]/15 pt-2.5 font-mono text-[9px] text-[#F6F0D8]/50">
-                    <div>HH-26-0000</div>
-                    {/* Simulated Barcode */}
-                    <div className="flex gap-0.5 items-center h-4">
-                      <div className="w-0.5 h-full bg-[#F6F0D8]/60" />
-                      <div className="w-1 h-full bg-[#F6F0D8]/60" />
-                      <div className="w-0.5 h-full bg-[#F6F0D8]/60" />
-                      <div className="w-1.5 h-full bg-[#F6F0D8]/60" />
-                      <div className="w-0.5 h-full bg-[#F6F0D8]/60" />
-                      <div className="w-1 h-full bg-[#F6F0D8]/60" />
-                    </div>
-                  </div>
-
                 </div>
               </div>
 
@@ -374,10 +403,9 @@ export default function DetailsStepPage() {
 
               <button
                 onClick={handleProceedNext}
-                disabled={!name.trim()}
-                className="px-8 py-3.5 bg-[#F5DD3B] text-[#17251C] font-mono text-xs font-bold uppercase tracking-wider border-2 border-[#17251C] shadow-[4px_4px_0px_#17251C] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[6px_6px_0px_#17251C] active:translate-x-[1px] active:translate-y-[1px] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3.5 bg-[#F5DD3B] text-[#17251C] font-mono text-xs font-bold uppercase tracking-wider border-2 border-[#17251C] shadow-[4px_4px_0px_#17251C] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[6px_6px_0px_#17251C] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
               >
-                NEXT: PICK MY FRAME →
+                NEXT: PERSONALIZE →
               </button>
             </div>
 
