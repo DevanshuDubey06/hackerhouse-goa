@@ -6,14 +6,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { getBuilderByPublicId, type BuilderData } from '@/lib/storage';
-import { renderIDCard, exportIDCard } from '@/lib/canvas-renderer';
+import { renderIDCard, exportIDCard, getCurrentBuilderOptions } from '@/lib/canvas-renderer';
 import { EVENT, SHARE_TEXT, CHECK_HYPE_URL } from '@/lib/config';
 
 /* ================================================================
    DECORATIVE STRIP
    ================================================================ */
 
-const STRIP_PATTERN = `url("data:image/svg+xml,%3Csvg width='60' height='22' viewBox='0 0 60 22' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='60' height='22' fill='%23C41E62'/%3E%3Crect width='60' height='1' fill='%2317251C'/%3E%3Crect y='21' width='60' height='1' fill='%2317251C'/%3E%3Cpath d='M30 3L38 11L30 19L22 11Z' fill='%231E5B3A' stroke='%23F5DD3B' stroke-width='0.6'/%3E%3Ccircle cx='30' cy='11' r='2.5' fill='%23F5DD3B'/%3E%3Ccircle cx='8' cy='11' r='3.5' fill='%231E5B3A'/%3E%3Ccircle cx='8' cy='11' r='1.5' fill='%23F5DD3B'/%3E%3Ccircle cx='52' cy='11' r='3.5' fill='%231E5B3A'/%3E%3Ccircle cx='52' cy='11' r='1.5' fill='%23F5DD3B'/%3E%3Cellipse cx='19' cy='6' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(25 19 6)'/%3E%3Cellipse cx='41' cy='6' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(-25 41 6)'/%3E%3Cellipse cx='19' cy='16' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(-25 19 16)'/%3E%3Cellipse cx='41' cy='16' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(25 41 16)'/%3E%3Ccircle cx='30' cy='3' r='1' fill='%23F5DD3B' opacity='0.6'/%3E%3Ccircle cx='30' cy='19' r='1' fill='%23F5DD3B' opacity='0.6'/%3E%3C/svg%3E")`;
+const STRIP_PATTERN = `url("data:image/svg+xml,%3Csvg width='60' height='22' viewBox='0 0 60 22' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='60' height='22' fill='%23C41E62'/%3E%3Crect width='60' height='1' fill='%2317251C'/%3E%3Crect y='21' width='60' height='1' fill='%2317251C'/%3E%3Cpath d='M30 3L38 11L30 19L22 11Z' fill='%231E5B3A' stroke='%23F5DD3B' stroke-width='0.6'/%3E%3Ccircle cx='30' cy='11' r='2.5' fill='%23F5DD3B'/%3E%3Ccircle cx='8' cy='11' r='3.5' fill='%231E5B3A'/%3E%3Ccircle cx='8' cy='11' r='1.5' fill='%23F5DD3B'/%3E%3Ccircle cx='52' cy='11' r='3.5' fill='%231E5B3A'/%3E%3Ccircle cx='52' cy='11' r='1.5' fill='%23F5DD3B'/%3E%3Cellipse cx='19' cy='6' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(25 19 6)'/%3E%3Cellipse cx='41' cy='6' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(-25 41 16)'/%3E%3Cellipse cx='19' cy='16' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(-25 19 16)'/%3E%3Cellipse cx='41' cy='16' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(25 41 16)'/%3E%3Ccircle cx='30' cy='3' r='1' fill='%23F5DD3B' opacity='0.6'/%3E%3Ccircle cx='30' cy='19' r='1' fill='%23F5DD3B' opacity='0.6'/%3E%3C/svg%3E")`;
 
 /* ================================================================
    PAGE 08 — PUBLIC BUILDER PROFILE
@@ -54,29 +54,16 @@ export default function PublicIDPage() {
       if (data.frameFormat) setFrame(data.frameFormat);
       if (data.photoDataUrl) setPhotoUrl(data.photoDataUrl);
     } else if (typeof window !== 'undefined') {
-      // Fallback: read from localStorage directly
-      const savedName = localStorage.getItem('hh_builder_name');
-      if (savedName) setName(savedName);
+      const opts = getCurrentBuilderOptions();
+      setName(opts.name);
+      setStack(opts.stack);
+      setBuilderClass(opts.builderClass);
+      if (opts.photo) setPhotoUrl(opts.photo);
+      setBuilderId(opts.builderId);
+      if (opts.vibe) setVibe(opts.vibe);
+      if (opts.frame) setFrame(opts.frame);
 
-      const savedStack = localStorage.getItem('hh_builder_stack');
-      if (savedStack) setStack(savedStack);
-
-      const savedClass = localStorage.getItem('hh_builder_class');
-      if (savedClass) setBuilderClass(savedClass);
-
-      const savedPhoto = localStorage.getItem('hh_builder_photo');
-      if (savedPhoto) setPhotoUrl(savedPhoto);
-
-      const savedId = localStorage.getItem('hh_builder_id');
-      if (savedId) setBuilderId(savedId);
-
-      const savedPalette = localStorage.getItem('hh_builder_palette');
-      if (savedPalette) setVibe(savedPalette);
-
-      const savedFormat = localStorage.getItem('hh_builder_format');
-      if (savedFormat) setFrame(savedFormat);
-
-      if (!savedName && !data) {
+      if (!opts.name && !data) {
         setNotFound(true);
       }
     }
@@ -84,14 +71,15 @@ export default function PublicIDPage() {
 
   // Update live preview image matching chosen Vibe & Frame
   useEffect(() => {
+    const opts = getCurrentBuilderOptions();
     renderIDCard({
-      photo: builder?.photoDataUrl || photoUrl,
-      name,
-      stack,
-      builderClass,
-      builderId,
-      vibe,
-      frame,
+      photo: builder?.photoDataUrl || opts.photo || photoUrl,
+      name: builder?.name || opts.name || name,
+      stack: builder?.stack || opts.stack || stack,
+      builderClass: builder?.builderClass?.label || opts.builderClass || builderClass,
+      builderId: builder?.publicId || opts.builderId || builderId,
+      vibe: builder?.frameStyle || opts.vibe || vibe,
+      frame: builder?.frameFormat || opts.frame || frame,
     }).then((url) => {
       setPreviewDataUrl(url);
     });
@@ -101,15 +89,16 @@ export default function PublicIDPage() {
   const handleDownload = async (format: 'png' | 'jpg' = 'png') => {
     setDownloadingFormat(format);
     try {
+      const opts = getCurrentBuilderOptions();
       await exportIDCard(
         {
-          photo: builder?.photoDataUrl || photoUrl,
-          name,
-          stack,
-          builderClass,
-          builderId,
-          vibe,
-          frame,
+          photo: builder?.photoDataUrl || opts.photo || photoUrl,
+          name: builder?.name || opts.name || name,
+          stack: builder?.stack || opts.stack || stack,
+          builderClass: builder?.builderClass?.label || opts.builderClass || builderClass,
+          builderId: builder?.publicId || opts.builderId || builderId,
+          vibe: builder?.frameStyle || opts.vibe || vibe,
+          frame: builder?.frameFormat || opts.frame || frame,
         },
         format
       );

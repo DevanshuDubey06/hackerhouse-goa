@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { EVENT, OFFICIAL_APPLY_URL, SHARE_TEXT } from '@/lib/config';
-import { renderIDCard, exportIDCard } from '@/lib/canvas-renderer';
+import { renderIDCard, exportIDCard, getCurrentBuilderOptions } from '@/lib/canvas-renderer';
 
 /* ================================================================
    DECORATIVE STRIP
@@ -42,34 +42,20 @@ export default function GenerateStepPage() {
 
   // Load saved data & run generation sequence on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedName = localStorage.getItem('hh_builder_name');
-      if (savedName) setName(savedName);
+    // Synchronously grab latest config from storage to ensure zero stale state
+    const opts = getCurrentBuilderOptions();
+    setName(opts.name);
+    setStack(opts.stack);
+    setBuilderClass(opts.builderClass);
+    if (opts.photo) setPhotoUrl(opts.photo);
+    setBuilderId(opts.builderId);
+    if (opts.vibe) setVibe(opts.vibe);
+    if (opts.frame) setFrame(opts.frame);
 
-      const savedStack = localStorage.getItem('hh_builder_stack');
-      if (savedStack) setStack(savedStack);
-
-      const savedClass = localStorage.getItem('hh_builder_class');
-      if (savedClass) setBuilderClass(savedClass);
-
-      const savedPhoto = localStorage.getItem('hh_builder_photo');
-      if (savedPhoto) setPhotoUrl(savedPhoto);
-
-      const savedPalette = localStorage.getItem('hh_builder_palette');
-      if (savedPalette) setVibe(savedPalette);
-
-      const savedFormat = localStorage.getItem('hh_builder_format');
-      if (savedFormat) setFrame(savedFormat);
-
-      // Generate or retrieve persistent Builder ID
-      let existingId = localStorage.getItem('hh_builder_id');
-      if (!existingId) {
-        const randSuffix = Math.floor(1000 + Math.random() * 9000).toString();
-        existingId = `HH-26-${randSuffix}`;
-        localStorage.setItem('hh_builder_id', existingId);
-      }
-      setBuilderId(existingId);
-    }
+    // Render immediately using exact current options object
+    renderIDCard(opts).then((url) => {
+      setPreviewDataUrl(url);
+    });
 
     // Fast generation sequence
     const t1 = setTimeout(() => setStep1Done(true), 300);
@@ -85,17 +71,10 @@ export default function GenerateStepPage() {
     };
   }, []);
 
-  // Update live preview image matching chosen Vibe & Frame
+  // Update live preview image when state changes
   useEffect(() => {
-    renderIDCard({
-      photo: photoUrl,
-      name,
-      stack,
-      builderClass,
-      builderId,
-      vibe,
-      frame,
-    }).then((url) => {
+    const opts = getCurrentBuilderOptions();
+    renderIDCard(opts).then((url) => {
       setPreviewDataUrl(url);
     });
   }, [photoUrl, name, stack, builderClass, builderId, vibe, frame]);
@@ -104,18 +83,8 @@ export default function GenerateStepPage() {
   const handleDownload = async (format: 'png' | 'jpg') => {
     try {
       setDownloadingFormat(format);
-      await exportIDCard(
-        {
-          photo: photoUrl,
-          name,
-          stack,
-          builderClass,
-          builderId,
-          vibe,
-          frame,
-        },
-        format
-      );
+      const opts = getCurrentBuilderOptions();
+      await exportIDCard(opts, format);
     } catch (err) {
       console.error('[Download Generate Page Error]:', err);
     } finally {

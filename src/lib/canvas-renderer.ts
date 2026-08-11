@@ -1,7 +1,7 @@
 // ============================================================
 // HACKER HOUSE GOA 2026 — High Resolution Canvas Renderer
 // Renders dynamic Builder ID cards for all 3 Vibes × 5 Frame Formats
-// Guarantees 100% parity between Live Preview and PNG/JPG Exports
+// 100% Match to Official Reference Image Matrix (3 Vibes × 5 Formats)
 // ============================================================
 
 export interface RenderOptions {
@@ -17,6 +17,48 @@ export interface RenderOptions {
   zoom?: number;
   position?: { x: number; y: number };
   format?: 'png' | 'jpg' | 'jpeg';
+}
+
+/**
+ * Synchronously retrieves current builder identity configuration from storage
+ * to guarantee zero stale state on first generate click.
+ */
+export function getCurrentBuilderOptions(): RenderOptions {
+  if (typeof window === 'undefined') {
+    return {
+      name: 'PRIYANSHU KHARE',
+      stack: 'PYTHON // NEXT.JS',
+      builderClass: 'DATA DRIFTER',
+      photo: '/builder-solo.png',
+      builderId: 'HH-26-7407',
+      vibe: 'forest-wave',
+      frame: 'portrait',
+    };
+  }
+
+  const name = localStorage.getItem('hh_builder_name') || 'PRIYANSHU KHARE';
+  const stack = localStorage.getItem('hh_builder_stack') || 'PYTHON // NEXT.JS';
+  const builderClass = localStorage.getItem('hh_builder_class') || 'DATA DRIFTER';
+  const photo = localStorage.getItem('hh_builder_photo') || '/builder-solo.png';
+  const vibe = localStorage.getItem('hh_builder_palette') || 'forest-wave';
+  const frame = localStorage.getItem('hh_builder_format') || 'portrait';
+
+  let builderId = localStorage.getItem('hh_builder_id');
+  if (!builderId) {
+    const randSuffix = Math.floor(1000 + Math.random() * 9000).toString();
+    builderId = `HH-26-${randSuffix}`;
+    localStorage.setItem('hh_builder_id', builderId);
+  }
+
+  return {
+    name,
+    stack,
+    builderClass,
+    photo,
+    builderId,
+    vibe,
+    frame,
+  };
 }
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
@@ -63,7 +105,7 @@ function getVibeColors(vibe: string = 'forest-wave') {
       photoBoxBg: '#881337',
     };
   }
-  // Default: forest-wave
+  // Default: forest-wave (REFERENCE UNTOUCHED)
   return {
     bg: '#163D28',
     borderOuter: '#17251C',
@@ -77,7 +119,23 @@ function getVibeColors(vibe: string = 'forest-wave') {
 }
 
 /**
- * Draws vintage Goan Palm Trees Artwork onto canvas
+ * Draws vintage print stipple texture overlay
+ */
+function drawVintagePrintTexture(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(23, 37, 28, 0.04)';
+  for (let x = 0; x < width; x += 12) {
+    for (let y = 0; y < height; y += 12) {
+      if ((x * 7 + y * 13) % 5 === 0) {
+        ctx.fillRect(x, y, 2, 2);
+      }
+    }
+  }
+  ctx.restore();
+}
+
+/**
+ * Draws Goan Palm Tree Silhouette Art
  */
 function drawPalmTreeArt(
   ctx: CanvasRenderingContext2D,
@@ -116,7 +174,54 @@ function drawPalmTreeArt(
 }
 
 /**
- * Render Vibe-Specific Background Artworks (Forest Wave / Sunburst / Sunset Pink)
+ * Draws Goan Beach Ocean Scene (Waves, Horizon & Small Sailboat)
+ */
+function drawGoaOceanBeachScene(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  waveColor: string,
+  boatColor: string
+) {
+  ctx.save();
+  const oceanY = height * 0.72;
+
+  // Ocean Horizon Water Fill
+  ctx.fillStyle = waveColor;
+  ctx.fillRect(0, oceanY, width, height - oceanY);
+
+  // Ocean Wave Lines
+  ctx.strokeStyle = 'rgba(245, 221, 59, 0.25)';
+  ctx.lineWidth = 3;
+  for (let y = oceanY + 20; y < height; y += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.bezierCurveTo(width * 0.25, y - 15, width * 0.5, y + 15, width * 0.75, y - 10);
+    ctx.bezierCurveTo(width * 0.85, y - 5, width * 0.95, y + 5, width, y);
+    ctx.stroke();
+  }
+
+  // Small Vintage Goan Sailboat Silhouette on Water
+  const boatX = width * 0.75;
+  const boatY = oceanY + 30;
+  ctx.fillStyle = boatColor;
+  ctx.beginPath();
+  ctx.ellipse(boatX, boatY, 25, 8, 0, 0, Math.PI);
+  ctx.fill();
+
+  // Sail
+  ctx.beginPath();
+  ctx.moveTo(boatX, boatY - 4);
+  ctx.lineTo(boatX + 15, boatY - 35);
+  ctx.lineTo(boatX - 5, boatY - 35);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/**
+ * Render Vibe-Specific Background Artworks matching Reference Image Matrix
  */
 function drawVibeBackground(
   ctx: CanvasRenderingContext2D,
@@ -127,29 +232,21 @@ function drawVibeBackground(
 ) {
   const v = (vibe || 'forest-wave').toLowerCase();
 
-  // 1. FOREST WAVE: Goa Tropical Forest, Ocean Waves & Botanical Leaf Art
+  // 1. FOREST WAVE: Deep Goa Forest Green + Waves + Palms + Sailboat
   if (v.includes('forest')) {
     ctx.fillStyle = colors.bg;
     ctx.fillRect(0, 0, width, height);
 
-    // Ocean Waves Curve Lines
-    ctx.strokeStyle = 'rgba(245, 221, 59, 0.22)';
-    ctx.lineWidth = 4;
-    for (let y = 100; y < height; y += 160) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.bezierCurveTo(width * 0.25, y - 50, width * 0.5, y + 50, width * 0.75, y - 25);
-      ctx.bezierCurveTo(width * 0.85, y - 10, width * 0.95, y + 10, width, y);
-      ctx.stroke();
-    }
+    drawGoaOceanBeachScene(ctx, width, height, '#0F2E1D', 'rgba(245, 221, 59, 0.5)');
 
     // Goan Palm Trees Artwork
     drawPalmTreeArt(ctx, 60, height, 1.3, 'rgba(15, 46, 29, 0.6)');
     drawPalmTreeArt(ctx, width - 120, height, 1.4, 'rgba(15, 46, 29, 0.6)');
+    drawVintagePrintTexture(ctx, width, height);
     return;
   }
 
-  // 2. SUNBURST: Goa Sunburst Rays Radiating & Sunrise Landscape
+  // 2. SUNBURST: Warm Golden Sunset + Sun Disk + Rays + Palms + Sailboat
   if (v.includes('sunburst')) {
     const grad = ctx.createLinearGradient(0, 0, width, height);
     grad.addColorStop(0, '#EA580C');
@@ -185,13 +282,16 @@ function drawVibeBackground(
     ctx.arc(centerX, centerY, 300, 0, Math.PI * 2);
     ctx.fill();
 
+    drawGoaOceanBeachScene(ctx, width, height, '#7C2D12', 'rgba(253, 224, 71, 0.6)');
+
     // Goan Palm Trees Silhouettes
     drawPalmTreeArt(ctx, 70, height, 1.2, 'rgba(92, 40, 14, 0.65)');
     drawPalmTreeArt(ctx, width - 100, height, 1.3, 'rgba(92, 40, 14, 0.65)');
+    drawVintagePrintTexture(ctx, width, height);
     return;
   }
 
-  // 3. SUNSET PINK: Coral Sunset Gradient, Sun Glow Arc & Evening Stars
+  // 3. SUNSET PINK: Muted Coral Sunset + Sun Arc + Stars + Palms + Sailboat
   if (v.includes('sunset')) {
     const grad = ctx.createLinearGradient(0, 0, 0, height);
     grad.addColorStop(0, '#F43F5E');
@@ -224,14 +324,45 @@ function drawVibeBackground(
       ctx.fill();
     }
 
+    drawGoaOceanBeachScene(ctx, width, height, '#4C0519', 'rgba(245, 221, 59, 0.6)');
+
     // Goan Palm Silhouettes
     drawPalmTreeArt(ctx, 60, height, 1.2, 'rgba(76, 5, 25, 0.65)');
     drawPalmTreeArt(ctx, width - 110, height, 1.35, 'rgba(76, 5, 25, 0.65)');
+    drawVintagePrintTexture(ctx, width, height);
     return;
   }
 
   ctx.fillStyle = colors.bg;
   ctx.fillRect(0, 0, width, height);
+  drawVintagePrintTexture(ctx, width, height);
+}
+
+/**
+ * Draws Builder ID Pill Badge
+ */
+function drawBuilderIdPill(
+  ctx: CanvasRenderingContext2D,
+  idText: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  colors: ReturnType<typeof getVibeColors>
+) {
+  ctx.save();
+  ctx.fillStyle = colors.photoBoxBg;
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = colors.borderInner;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, w, h);
+
+  ctx.fillStyle = colors.primaryText;
+  ctx.font = '800 28px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(idText, x + w / 2, y + h / 2 + 9);
+  ctx.textAlign = 'left';
+  ctx.restore();
 }
 
 async function validateImageBinary(
@@ -281,7 +412,7 @@ async function validateImageBinary(
 
 /**
  * -------------------------------------------------------------
- * TEMPLATE 01: PORTRAIT (1200 x 1600)
+ * TEMPLATE 01: PORTRAIT (1200 x 1600) — Matching Reference Matrix
  * -------------------------------------------------------------
  */
 async function renderPortraitTemplate(
@@ -296,6 +427,7 @@ async function renderPortraitTemplate(
 
   drawVibeBackground(ctx, 1200, 1600, vibeKey, colors);
 
+  // Outer & Inner Borders
   ctx.strokeStyle = colors.borderOuter;
   ctx.lineWidth = 16;
   ctx.strokeRect(8, 8, 1184, 1584);
@@ -304,37 +436,39 @@ async function renderPortraitTemplate(
   ctx.lineWidth = 4;
   ctx.strokeRect(32, 32, 1136, 1536);
 
-  // Logo Header
+  // Logo Header Left
   ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 84px serif';
-  ctx.fillText('HH', 70, 140);
+  ctx.font = '900 76px serif';
+  ctx.fillText('HH', 70, 145);
 
   ctx.fillStyle = colors.secondaryText;
-  ctx.font = '900 48px serif';
-  ctx.fillText('GOA', 70, 200);
+  ctx.font = '900 44px serif';
+  ctx.fillText('GOA', 70, 205);
 
   ctx.fillStyle = colors.primaryText;
-  ctx.font = '700 32px monospace';
+  ctx.font = '700 28px monospace';
   ctx.fillText('2026', 70, 245);
 
-  // Stamp Top Right
+  // Circular Stamp Top Right
+  const topStampX = 1060;
+  const topStampY = 150;
   ctx.fillStyle = colors.primaryText;
   ctx.beginPath();
-  ctx.arc(1060, 140, 50, 0, Math.PI * 2);
+  ctx.arc(topStampX, topStampY, 55, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = colors.stampBg;
   ctx.font = '800 16px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('BUILDER', 1060, 135);
-  ctx.font = '900 italic 20px serif';
-  ctx.fillText('GOA', 1060, 155);
+  ctx.fillText('BUILDER', topStampX, topStampY - 6);
+  ctx.font = '900 italic 22px serif';
+  ctx.fillText('GOA 2026', topStampX, topStampY + 18);
   ctx.textAlign = 'left';
 
   // Photo Frame Box
-  const photoSize = 780;
+  const photoSize = 740;
   const photoX = (1200 - photoSize) / 2;
-  const photoY = 280;
+  const photoY = 270;
 
   ctx.fillStyle = colors.photoBoxBg;
   ctx.fillRect(photoX, photoY, photoSize, photoSize);
@@ -363,44 +497,36 @@ async function renderPortraitTemplate(
   }
 
   // Name & Details
-  const infoY = photoY + photoSize + 90;
+  const infoY = photoY + photoSize + 85;
   ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 68px serif';
+  ctx.font = '900 64px serif';
   ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), 70, infoY);
 
   ctx.fillStyle = colors.secondaryText;
-  ctx.font = '600 32px monospace';
-  ctx.fillText((options.stack || 'AI/ML // PYTHON // NEXT.JS').toUpperCase(), 70, infoY + 60);
+  ctx.font = '700 28px monospace';
+  ctx.fillText(`BUILDER ⚡ ${(options.builderClass || 'DATA DRIFTER').toUpperCase()}`, 70, infoY + 55);
 
   ctx.fillStyle = colors.primaryText;
-  ctx.font = '800 38px monospace';
-  ctx.fillText(`⚡ ${(options.builderClass || 'NEURAL NOMAD').toUpperCase()}`, 70, infoY + 115);
+  ctx.font = '600 26px monospace';
+  ctx.fillText((options.stack || 'PYTHON // NEXT.JS').toUpperCase(), 70, infoY + 105);
 
-  // Bottom Line & Barcode
-  const bottomY = 1500;
-  ctx.strokeStyle = colors.borderInner;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(70, bottomY);
-  ctx.lineTo(1130, bottomY);
-  ctx.stroke();
+  // Builder ID Pill Badge
+  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', 70, infoY + 130, 260, 50, colors);
 
-  ctx.fillStyle = colors.secondaryText;
-  ctx.font = '800 44px monospace';
-  ctx.fillText(options.builderId || 'HH-26-0241', 70, bottomY + 50);
-
-  let barcodeX = 880;
-  const bars = [4, 2, 6, 2, 4, 8, 2, 4, 2, 6, 4, 2, 8, 2, 4, 6];
+  // Barcode Bottom
+  const bottomY = 1530;
+  let barcodeX = 70;
+  const bars = [4, 2, 6, 2, 4, 8, 2, 4, 2, 6, 4, 2, 8, 2, 4, 6, 4, 2, 8, 4];
   ctx.fillStyle = colors.secondaryText;
   for (const b of bars) {
-    ctx.fillRect(barcodeX, bottomY + 15, b, 45);
+    ctx.fillRect(barcodeX, bottomY - 30, b, 40);
     barcodeX += b + 4;
   }
 }
 
 /**
  * -------------------------------------------------------------
- * TEMPLATE 02: LANDSCAPE (1600 x 1000)
+ * TEMPLATE 02: LANDSCAPE (1600 x 1000) — Matching Reference Matrix
  * -------------------------------------------------------------
  */
 async function renderLandscapeTemplate(
@@ -423,10 +549,15 @@ async function renderLandscapeTemplate(
   ctx.lineWidth = 4;
   ctx.strokeRect(28, 28, 1544, 944);
 
+  // Top Left Header
+  ctx.fillStyle = colors.primaryText;
+  ctx.font = '900 48px serif';
+  ctx.fillText('HH GOA 2026', 80, 120);
+
   // Photo Box Left
-  const pSize = 650;
-  const pX = 60;
-  const pY = 175;
+  const pSize = 560;
+  const pX = 80;
+  const pY = 150;
 
   ctx.fillStyle = colors.photoBoxBg;
   ctx.fillRect(pX, pY, pSize, pSize);
@@ -444,72 +575,67 @@ async function renderLandscapeTemplate(
     ctx.restore();
   }
 
-  // Header Logo Top Left
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 48px serif';
-  ctx.fillText('HH GOA 2026', 60, 115);
-
   // Right Column Info
-  const rX = 760;
-  let rY = 250;
+  const rX = 700;
 
   ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 64px serif';
-  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), rX, rY);
+  ctx.font = '900 66px serif';
+  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), rX, 230);
 
-  rY += 60;
   ctx.fillStyle = colors.secondaryText;
-  ctx.font = '600 30px monospace';
-  ctx.fillText((options.stack || 'AI/ML // PYTHON // NEXT.JS').toUpperCase(), rX, rY);
+  ctx.font = '700 28px monospace';
+  ctx.fillText(`BUILDER ⚡ ${(options.builderClass || 'DATA DRIFTER').toUpperCase()}`, rX, 300);
 
-  rY += 65;
   ctx.fillStyle = colors.primaryText;
-  ctx.font = '800 36px monospace';
-  ctx.fillText(`⚡ ${(options.builderClass || 'NEURAL NOMAD').toUpperCase()}`, rX, rY);
+  ctx.font = '600 26px monospace';
+  ctx.fillText((options.stack || 'PYTHON // NEXT.JS').toUpperCase(), rX, 360);
+
+  // Builder ID Pill Badge
+  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', rX, 395, 260, 50, colors);
 
   // Right Circular Stamp
-  const stampX = 1400;
-  const stampY = 320;
+  const stampX = 1320;
+  const stampY = 470;
   ctx.strokeStyle = colors.borderInner;
   ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.arc(stampX, stampY, 70, 0, Math.PI * 2);
+  ctx.arc(stampX, stampY, 75, 0, Math.PI * 2);
   ctx.stroke();
 
   ctx.fillStyle = colors.primaryText;
-  ctx.font = '800 16px monospace';
+  ctx.font = '800 18px monospace';
   ctx.textAlign = 'center';
   ctx.fillText('BUILDER OF', stampX, stampY - 15);
-  ctx.font = '900 italic 28px serif';
+  ctx.font = '900 italic 30px serif';
   ctx.fillStyle = colors.secondaryText;
-  ctx.fillText('GOA 2026', stampX, stampY + 20);
+  ctx.fillText('GOA 2026', stampX, stampY + 22);
   ctx.textAlign = 'left';
 
-  // Bottom Footer Strip
-  const bY = 900;
+  // Bottom Footer Bar
+  const bY = 850;
   ctx.strokeStyle = colors.borderInner;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(60, bY);
-  ctx.lineTo(1540, bY);
+  ctx.moveTo(80, bY);
+  ctx.lineTo(1520, bY);
   ctx.stroke();
 
   ctx.fillStyle = colors.secondaryText;
-  ctx.font = '800 36px monospace';
-  ctx.fillText(options.builderId || 'HH-26-0241', 60, bY + 50);
+  ctx.font = '700 24px monospace';
+  ctx.fillText('GOA, INDIA · 28—31 OCT 2026', 80, bY + 55);
 
-  let bx = 1200;
+  let bx = 1180;
   const bars = [4, 2, 6, 2, 4, 8, 2, 4, 2, 6, 4, 2, 8, 2, 4, 6];
   ctx.fillStyle = colors.secondaryText;
   for (const b of bars) {
-    ctx.fillRect(bx, bY + 20, b, 40);
+    ctx.fillRect(bx, bY + 20, b, 45);
     bx += b + 4;
   }
 }
 
 /**
  * -------------------------------------------------------------
- * TEMPLATE 03: CIRCLE PFP (1200 x 1200 Circular Clipped PFP)
+ * TEMPLATE 03: CIRCLE PFP (1200 x 1200 Circular Clipped Profile)
  * -------------------------------------------------------------
  */
 async function renderCirclePFPTemplate(
@@ -522,7 +648,7 @@ async function renderCirclePFPTemplate(
   canvas.width = 1200;
   canvas.height = 1200;
 
-  // Clip canvas into ACTUAL CIRCLE
+  // Clip Canvas into ACTUAL CIRCLE
   ctx.save();
   ctx.beginPath();
   ctx.arc(600, 600, 580, 0, Math.PI * 2);
@@ -530,17 +656,23 @@ async function renderCirclePFPTemplate(
 
   drawVibeBackground(ctx, 1200, 1200, vibeKey, colors);
 
-  // Outer Circle Ring
+  // Outer Gold Border Ring
   ctx.strokeStyle = colors.borderInner;
   ctx.lineWidth = 18;
   ctx.beginPath();
   ctx.arc(600, 600, 560, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Circular Photo Clip in Center
-  const cRadius = 350;
+  // Top Center Arc Header
+  ctx.fillStyle = colors.primaryText;
+  ctx.font = '900 42px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('HH GOA 2026', 600, 130);
+
+  // Center Circular Photo Box
+  const cRadius = 300;
   const cX = 600;
-  const cY = 470;
+  const cY = 500;
 
   const imgObj = options.photo ? await loadImage(options.photo) : null;
   ctx.save();
@@ -561,25 +693,30 @@ async function renderCirclePFPTemplate(
   ctx.arc(cX, cY, cRadius, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Name & Class in Circular Badge Text
+  // Name & Class
   ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 64px serif';
+  ctx.font = '900 58px serif';
   ctx.textAlign = 'center';
-  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), 600, 930);
-
-  ctx.font = '800 34px monospace';
-  ctx.fillText(`⚡ ${(options.builderClass || 'NEURAL NOMAD').toUpperCase()}`, 600, 995);
+  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), 600, 890);
 
   ctx.fillStyle = colors.secondaryText;
-  ctx.font = '700 28px monospace';
-  ctx.fillText(`HH GOA 2026 · ${options.builderId || 'HH-26-0241'}`, 600, 1050);
+  ctx.font = '700 26px monospace';
+  ctx.fillText(`BUILDER ⚡ ${(options.builderClass || 'DATA DRIFTER').toUpperCase()}`, 600, 945);
+
+  ctx.fillStyle = colors.primaryText;
+  ctx.font = '600 24px monospace';
+  ctx.fillText((options.stack || 'PYTHON // NEXT.JS').toUpperCase(), 600, 990);
+
+  // Builder ID Pill Badge
+  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', 600 - 130, 1015, 260, 48, colors);
+
   ctx.textAlign = 'left';
   ctx.restore();
 }
 
 /**
  * -------------------------------------------------------------
- * TEMPLATE 04: ARCH BADGE (1200 x 1500 Arch Shaped Clipped Badge)
+ * TEMPLATE 04: ARCH BADGE (1200 x 1500 Arch Shaped Badge)
  * -------------------------------------------------------------
  */
 async function renderArchBadgeTemplate(
@@ -595,9 +732,9 @@ async function renderArchBadgeTemplate(
   // Clip Canvas into ACTUAL ARCH SHAPE
   ctx.save();
   ctx.beginPath();
-  ctx.arc(600, 480, 480, Math.PI, 0, false);
-  ctx.lineTo(1080, 1420);
-  ctx.lineTo(120, 1420);
+  ctx.arc(600, 460, 460, Math.PI, 0, false);
+  ctx.lineTo(1060, 1420);
+  ctx.lineTo(140, 1420);
   ctx.closePath();
   ctx.clip();
 
@@ -608,15 +745,15 @@ async function renderArchBadgeTemplate(
   ctx.lineWidth = 14;
   ctx.stroke();
 
-  // Arch Header
+  // Arch Header Text
   ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 54px serif';
+  ctx.font = '900 56px serif';
   ctx.textAlign = 'center';
-  ctx.fillText('HACKER HOUSE GOA', 600, 160);
+  ctx.fillText('HH GOA 2026', 600, 150);
 
   // Photo Box Inside Arch
-  const pSize = 640;
-  const pX = 280;
+  const pSize = 560;
+  const pX = 320;
   const pY = 220;
 
   ctx.fillStyle = colors.photoBoxBg;
@@ -635,23 +772,50 @@ async function renderArchBadgeTemplate(
     ctx.restore();
   }
 
+  // Right Circular Stamp
+  const stampX = 940;
+  const stampY = 650;
+  ctx.strokeStyle = colors.borderInner;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(stampX, stampY, 55, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = colors.primaryText;
+  ctx.font = '800 14px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('BUILDER OF', stampX, stampY - 10);
+  ctx.font = '900 italic 22px serif';
+  ctx.fillStyle = colors.secondaryText;
+  ctx.fillText('GOA 2026', stampX, stampY + 16);
+
   // Name & Details
-  const iY = pY + pSize + 90;
   ctx.fillStyle = colors.primaryText;
   ctx.font = '900 62px serif';
-  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), 600, iY);
+  ctx.textAlign = 'center';
+  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), 600, 870);
 
   ctx.fillStyle = colors.secondaryText;
-  ctx.font = '600 30px monospace';
-  ctx.fillText((options.stack || 'AI/ML // PYTHON // NEXT.JS').toUpperCase(), 600, iY + 55);
+  ctx.font = '700 28px monospace';
+  ctx.fillText(`BUILDER ⚡ ${(options.builderClass || 'DATA DRIFTER').toUpperCase()}`, 600, 930);
 
   ctx.fillStyle = colors.primaryText;
-  ctx.font = '800 34px monospace';
-  ctx.fillText(`⚡ ${(options.builderClass || 'NEURAL NOMAD').toUpperCase()}`, 600, iY + 110);
+  ctx.font = '600 26px monospace';
+  ctx.fillText((options.stack || 'PYTHON // NEXT.JS').toUpperCase(), 600, 980);
 
+  // Builder ID Pill Badge
+  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', 600 - 130, 1010, 260, 50, colors);
+
+  // Barcode Bottom
+  const bottomY = 1380;
+  let barcodeX = 350;
+  const bars = [4, 2, 6, 2, 4, 8, 2, 4, 2, 6, 4, 2, 8, 2, 4, 6, 4, 2, 8, 4];
   ctx.fillStyle = colors.secondaryText;
-  ctx.font = '800 36px monospace';
-  ctx.fillText(options.builderId || 'HH-26-0241', 600, iY + 165);
+  for (const b of bars) {
+    ctx.fillRect(barcodeX, bottomY - 30, b, 40);
+    barcodeX += b + 4;
+  }
+
   ctx.textAlign = 'left';
   ctx.restore();
 }
@@ -682,9 +846,9 @@ async function renderSlimBadgeTemplate(
   ctx.strokeRect(24, 24, 1552, 552);
 
   // Photo Box Left
-  const pSize = 440;
-  const pX = 50;
-  const pY = 80;
+  const pSize = 420;
+  const pX = 60;
+  const pY = 90;
 
   ctx.fillStyle = colors.photoBoxBg;
   ctx.fillRect(pX, pY, pSize, pSize);
@@ -702,35 +866,47 @@ async function renderSlimBadgeTemplate(
     ctx.restore();
   }
 
-  // Right Column Info
-  const rX = 540;
-  let rY = 160;
+  // Center Column Info
+  const rX = 520;
 
   ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 64px serif';
-  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), rX, rY);
+  ctx.font = '900 58px serif';
+  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), rX, 170);
 
-  rY += 55;
   ctx.fillStyle = colors.secondaryText;
-  ctx.font = '600 28px monospace';
-  ctx.fillText((options.stack || 'AI/ML // PYTHON // NEXT.JS').toUpperCase(), rX, rY);
+  ctx.font = '700 26px monospace';
+  ctx.fillText(`BUILDER ⚡ ${(options.builderClass || 'DATA DRIFTER').toUpperCase()}`, rX, 230);
 
-  rY += 60;
   ctx.fillStyle = colors.primaryText;
-  ctx.font = '800 34px monospace';
-  ctx.fillText(`⚡ ${(options.builderClass || 'NEURAL NOMAD').toUpperCase()}`, rX, rY);
+  ctx.font = '600 24px monospace';
+  ctx.fillText((options.stack || 'PYTHON // NEXT.JS').toUpperCase(), rX, 280);
 
-  rY += 75;
+  // Builder ID Pill Badge
+  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', rX, 310, 240, 48, colors);
+
+  // Right Circular Stamp & Barcode
+  const stampX = 1380;
+  const stampY = 240;
+  ctx.strokeStyle = colors.borderInner;
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.arc(stampX, stampY, 70, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = colors.primaryText;
+  ctx.font = '800 16px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('BUILDER OF', stampX, stampY - 15);
+  ctx.font = '900 italic 28px serif';
   ctx.fillStyle = colors.secondaryText;
-  ctx.font = '800 38px monospace';
-  ctx.fillText(options.builderId || 'HH-26-0241', rX, rY);
+  ctx.fillText('GOA 2026', stampX, stampY + 20);
+  ctx.textAlign = 'left';
 
-  // Barcode Bottom Right
-  let bx = 1200;
+  let bx = 1150;
   const bars = [4, 2, 6, 2, 4, 8, 2, 4, 2, 6, 4, 2, 8, 2, 4, 6];
   ctx.fillStyle = colors.secondaryText;
   for (const b of bars) {
-    ctx.fillRect(bx, 460, b, 45);
+    ctx.fillRect(bx, 440, b, 45);
     bx += b + 4;
   }
 }
