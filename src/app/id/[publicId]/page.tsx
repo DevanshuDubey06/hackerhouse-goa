@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { getBuilderByPublicId, type BuilderData } from '@/lib/storage';
-import { renderIDCard, triggerFileDownload } from '@/lib/canvas-renderer';
+import { exportIDCard } from '@/lib/canvas-renderer';
 import { EVENT, SHARE_TEXT } from '@/lib/config';
 
 /* ================================================================
@@ -27,10 +27,6 @@ export default function PublicIDPage() {
   const [builder, setBuilder] = useState<BuilderData | null>(null);
   const [notFound, setNotFound] = useState(false);
 
-  // Pre-rendered export URLs for instant, 100% native Chrome download
-  const [pngDataUrl, setPngDataUrl] = useState<string | null>(null);
-  const [jpgDataUrl, setJpgDataUrl] = useState<string | null>(null);
-
   // Fallback state
   const [name, setName] = useState('PRIYANSHU KHARE');
   const [stack, setStack] = useState('AI/ML // PYTHON // NEXT.JS');
@@ -43,114 +39,54 @@ export default function PublicIDPage() {
   const [downloadingFormat, setDownloadingFormat] = useState<string | null>(null);
 
   useEffect(() => {
-    let currentName = 'PRIYANSHU KHARE';
-    let currentStack = 'AI/ML // PYTHON // NEXT.JS';
-    let currentClass = 'NEURAL NOMAD';
-    let currentPhoto = '/builder-solo.png';
-    let currentId = 'HH-26-0241';
-
     // Try structured storage first
     const data = getBuilderByPublicId(publicId?.toUpperCase());
     if (data) {
       setBuilder(data);
       setName(data.name);
-      currentName = data.name;
       setStack(data.stack);
-      currentStack = data.stack;
       setBuilderClass(data.builderClass?.label || 'NEURAL NOMAD');
-      currentClass = data.builderClass?.label || 'NEURAL NOMAD';
       setBuilderId(data.publicId);
-      currentId = data.publicId;
-      if (data.photoDataUrl) {
-        setPhotoUrl(data.photoDataUrl);
-        currentPhoto = data.photoDataUrl;
-      }
+      if (data.photoDataUrl) setPhotoUrl(data.photoDataUrl);
     } else if (typeof window !== 'undefined') {
       // Fallback: read from localStorage directly
       const savedName = localStorage.getItem('hh_builder_name');
-      if (savedName) {
-        setName(savedName);
-        currentName = savedName;
-      }
+      if (savedName) setName(savedName);
 
       const savedStack = localStorage.getItem('hh_builder_stack');
-      if (savedStack) {
-        setStack(savedStack);
-        currentStack = savedStack;
-      }
+      if (savedStack) setStack(savedStack);
 
       const savedClass = localStorage.getItem('hh_builder_class');
-      if (savedClass) {
-        setBuilderClass(savedClass);
-        currentClass = savedClass;
-      }
+      if (savedClass) setBuilderClass(savedClass);
 
       const savedPhoto = localStorage.getItem('hh_builder_photo');
-      if (savedPhoto) {
-        setPhotoUrl(savedPhoto);
-        currentPhoto = savedPhoto;
-      }
+      if (savedPhoto) setPhotoUrl(savedPhoto);
 
       const savedId = localStorage.getItem('hh_builder_id');
-      if (savedId) {
-        setBuilderId(savedId);
-        currentId = savedId;
-      }
+      if (savedId) setBuilderId(savedId);
 
       if (!savedName && !data) {
         setNotFound(true);
-        return;
       }
     }
-
-    // Pre-render PNG and JPG data URLs on page mount
-    (async () => {
-      try {
-        const png = await renderIDCard({
-          photo: currentPhoto,
-          name: currentName,
-          stack: currentStack,
-          builderClass: currentClass,
-          builderId: currentId,
-          format: 'png',
-        });
-        setPngDataUrl(png);
-
-        const jpg = await renderIDCard({
-          photo: currentPhoto,
-          name: currentName,
-          stack: currentStack,
-          builderClass: currentClass,
-          builderId: currentId,
-          format: 'jpg',
-        });
-        setJpgDataUrl(jpg);
-      } catch (err) {
-        console.error('Profile pre-render error:', err);
-      }
-    })();
   }, [publicId]);
 
-  // Download Handler Fallback
-  const handleDownloadFallback = async (format: 'png' | 'jpg') => {
+  // Download Handler (Export PNG or JPG directly from validated canvas blob)
+  const handleDownload = async (format: 'png' | 'jpg' = 'png') => {
     setDownloadingFormat(format);
     try {
-      const dataUrl = await renderIDCard({
-        photo: builder?.photoDataUrl || photoUrl,
-        name,
-        stack,
-        builderClass,
-        builderId,
-        frameStyle: builder?.frameStyle || 'monsoon',
-        zoom: 1,
-        position: { x: 0, y: 0 },
-        format,
-      });
-
-      const filename = `HH-GOA-2026-${builderId}.${format}`;
-      triggerFileDownload(dataUrl, filename);
+      await exportIDCard(
+        {
+          photo: builder?.photoDataUrl || photoUrl,
+          name,
+          stack,
+          builderClass,
+          builderId,
+        },
+        format
+      );
     } catch (err) {
-      console.error('Download error:', err);
+      console.error('[Download Public Profile Error]:', err);
     } finally {
       setDownloadingFormat(null);
     }
@@ -363,38 +299,26 @@ export default function PublicIDPage() {
                   </div>
                 </div>
 
-                {/* ── Action Buttons (Native HTML <a> Download Links) ── */}
+                {/* ── Action Buttons ── */}
                 <div>
                   <div className="flex flex-wrap items-center gap-3 mb-4">
                     {/* Download PNG */}
-                    <a
-                      href={pngDataUrl || '#'}
-                      download={`HH-GOA-2026-${builderId}.png`}
-                      onClick={(e) => {
-                        if (!pngDataUrl) {
-                          e.preventDefault();
-                          handleDownloadFallback('png');
-                        }
-                      }}
-                      className="px-5 py-3 bg-[#F5DD3B] text-[#17251C] font-mono text-xs font-extrabold uppercase tracking-wider border-2 border-[#17251C] shadow-[3px_3px_0px_#17251C] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[5px_5px_0px_#17251C] transition-all flex items-center gap-2 no-underline cursor-pointer"
+                    <button
+                      onClick={() => handleDownload('png')}
+                      disabled={downloadingFormat === 'png'}
+                      className="px-5 py-3 bg-[#F5DD3B] text-[#17251C] font-mono text-xs font-extrabold uppercase tracking-wider border-2 border-[#17251C] shadow-[3px_3px_0px_#17251C] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[5px_5px_0px_#17251C] transition-all flex items-center gap-2 cursor-pointer"
                     >
                       <span>📥</span> {downloadingFormat === 'png' ? 'EXPORTING PNG...' : 'DOWNLOAD PNG'}
-                    </a>
+                    </button>
 
                     {/* Download JPG */}
-                    <a
-                      href={jpgDataUrl || '#'}
-                      download={`HH-GOA-2026-${builderId}.jpg`}
-                      onClick={(e) => {
-                        if (!jpgDataUrl) {
-                          e.preventDefault();
-                          handleDownloadFallback('jpg');
-                        }
-                      }}
-                      className="px-5 py-3 bg-[#F5DD3B] text-[#17251C] font-mono text-xs font-extrabold uppercase tracking-wider border-2 border-[#17251C] shadow-[3px_3px_0px_#17251C] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[5px_5px_0px_#17251C] transition-all flex items-center gap-2 no-underline cursor-pointer"
+                    <button
+                      onClick={() => handleDownload('jpg')}
+                      disabled={downloadingFormat === 'jpg'}
+                      className="px-5 py-3 bg-[#F5DD3B] text-[#17251C] font-mono text-xs font-extrabold uppercase tracking-wider border-2 border-[#17251C] shadow-[3px_3px_0px_#17251C] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[5px_5px_0px_#17251C] transition-all flex items-center gap-2 cursor-pointer"
                     >
                       <span>🖼️</span> {downloadingFormat === 'jpg' ? 'EXPORTING JPG...' : 'DOWNLOAD JPG'}
-                    </a>
+                    </button>
 
                     {/* Share Your ID */}
                     <button
