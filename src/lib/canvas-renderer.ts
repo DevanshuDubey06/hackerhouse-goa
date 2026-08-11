@@ -77,6 +77,45 @@ function getVibeColors(vibe: string = 'forest-wave') {
 }
 
 /**
+ * Draws vintage Goan Palm Trees Artwork onto canvas
+ */
+function drawPalmTreeArt(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  scale: number = 1,
+  color: string = 'rgba(15, 46, 29, 0.45)'
+) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  ctx.fillStyle = color;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 8;
+
+  // Curved Trunk
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(25, -100, 20, -200);
+  ctx.stroke();
+
+  // Palm Leaves Fronds
+  const angles = [-0.8, -0.4, 0, 0.4, 0.8, 1.1, -1.1];
+  for (const a of angles) {
+    ctx.save();
+    ctx.translate(20, -200);
+    ctx.rotate(a);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(50, -25, 100, 15);
+    ctx.quadraticCurveTo(50, 15, 0, 0);
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/**
  * Render Vibe-Specific Background Artworks
  */
 function drawVibeBackground(
@@ -88,7 +127,7 @@ function drawVibeBackground(
 ) {
   const v = (vibe || 'forest-wave').toLowerCase();
 
-  // 1. FOREST WAVE: Goa Tropical Forest, Ocean Waves & Botanical Leaf Patterns
+  // 1. FOREST WAVE: Goa Tropical Forest, Ocean Waves & Palm Trees
   if (v.includes('forest')) {
     ctx.fillStyle = colors.bg;
     ctx.fillRect(0, 0, width, height);
@@ -104,19 +143,13 @@ function drawVibeBackground(
       ctx.stroke();
     }
 
-    // Tropical Leaf Silhouettes
-    ctx.fillStyle = 'rgba(15, 46, 29, 0.45)';
-    ctx.beginPath();
-    ctx.ellipse(100, 100, 160, 70, Math.PI / 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.ellipse(width - 120, height - 120, 180, 80, -Math.PI / 3, 0, Math.PI * 2);
-    ctx.fill();
+    // Goan Palm Trees Artwork
+    drawPalmTreeArt(ctx, 40, height, 1.2, 'rgba(15, 46, 29, 0.5)');
+    drawPalmTreeArt(ctx, width - 100, height, 1.3, 'rgba(15, 46, 29, 0.5)');
     return;
   }
 
-  // 2. SUNBURST: Goa Sunburst Rays Radiating & Radiant Sunrise Gradient
+  // 2. SUNBURST: Goa Sunburst Rays Radiating & Palm Silhouettes
   if (v.includes('sunburst')) {
     const grad = ctx.createLinearGradient(0, 0, width, height);
     grad.addColorStop(0, '#D97706');
@@ -125,6 +158,7 @@ function drawVibeBackground(
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
+    // Radiating Sunburst Rays
     const centerX = width / 2;
     const centerY = height / 3;
     const rayCount = 24;
@@ -141,6 +175,10 @@ function drawVibeBackground(
       ctx.closePath();
       ctx.fill();
     }
+
+    // Goan Palm Trees Silhouettes
+    drawPalmTreeArt(ctx, 60, height, 1.1, 'rgba(92, 40, 14, 0.5)');
+    drawPalmTreeArt(ctx, width - 80, height, 1.2, 'rgba(92, 40, 14, 0.5)');
     return;
   }
 
@@ -153,7 +191,7 @@ function drawVibeBackground(
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
-    // Goa Sunset Horizon Sun Glow
+    // Sunset Horizon Glow Arc
     const sunGrad = ctx.createRadialGradient(width / 2, height * 0.7, 50, width / 2, height * 0.7, 480);
     sunGrad.addColorStop(0, 'rgba(245, 221, 59, 0.35)');
     sunGrad.addColorStop(1, 'rgba(190, 18, 60, 0)');
@@ -176,6 +214,10 @@ function drawVibeBackground(
       ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    // Goan Palm Silhouettes
+    drawPalmTreeArt(ctx, 50, height, 1.1, 'rgba(76, 5, 25, 0.55)');
+    drawPalmTreeArt(ctx, width - 90, height, 1.25, 'rgba(76, 5, 25, 0.55)');
     return;
   }
 
@@ -250,7 +292,6 @@ async function drawCardOnCanvas(canvas: HTMLCanvasElement, options: RenderOption
     canvas.width = 1600;
     canvas.height = 1000;
 
-    // Draw Vibe Background Artwork
     drawVibeBackground(ctx, 1600, 1000, vibeKey, colors);
 
     ctx.strokeStyle = colors.borderOuter;

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { EVENT, OFFICIAL_APPLY_URL, SHARE_TEXT } from '@/lib/config';
-import { exportIDCard } from '@/lib/canvas-renderer';
+import { renderIDCard, exportIDCard } from '@/lib/canvas-renderer';
 
 /* ================================================================
    DECORATIVE STRIP
@@ -28,6 +28,7 @@ export default function GenerateStepPage() {
   const [builderId, setBuilderId] = useState('HH-26-0241');
   const [vibe, setVibe] = useState('forest-wave');
   const [frame, setFrame] = useState('portrait');
+  const [previewDataUrl, setPreviewDataUrl] = useState<string>('');
 
   // Animation Sequence States
   const [step1Done, setStep1Done] = useState(false);
@@ -84,6 +85,21 @@ export default function GenerateStepPage() {
     };
   }, []);
 
+  // Update live preview image matching chosen Vibe & Frame
+  useEffect(() => {
+    renderIDCard({
+      photo: photoUrl,
+      name,
+      stack,
+      builderClass,
+      builderId,
+      vibe,
+      frame,
+    }).then((url) => {
+      setPreviewDataUrl(url);
+    });
+  }, [photoUrl, name, stack, builderClass, builderId, vibe, frame]);
+
   // Download Action (Export PNG or JPG directly with selected Vibe and Frame format)
   const handleDownload = async (format: 'png' | 'jpg') => {
     try {
@@ -130,13 +146,6 @@ export default function GenerateStepPage() {
     }
     router.push('/create');
   };
-
-  // Card Background Style based on Vibe
-  const cardBgClass = vibe.includes('sunburst')
-    ? 'bg-[#C77D0A]'
-    : vibe.includes('sunset')
-    ? 'bg-[#BE123C]'
-    : 'bg-[#163D28]';
 
   return (
     <div className="min-h-screen bg-[#1E5B3A] text-[#F6F0D8] grain-overlay">
@@ -303,93 +312,26 @@ export default function GenerateStepPage() {
                   </div>
                 </div>
 
-                {/* The Revealed Credential Card matching Reference Image 1:1 */}
+                {/* The Revealed Credential Canvas Image matching chosen Vibe & Frame */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  className={`w-full ${cardBgClass} text-[#F6F0D8] border-2 border-[#17251C] rounded-xl p-6 md:p-8 shadow-[8px_8px_0px_#17251C] relative overflow-hidden transition-colors duration-300`}
+                  className="w-full flex justify-center items-center"
                 >
-                  {/* Top Punch Hole */}
-                  <div className="w-10 h-3 rounded-full bg-[#FAF7ED] border border-[#17251C] mx-auto mb-4" />
-
-                  {/* Header Row */}
-                  <div className="flex items-center justify-between border-b border-[#F6F0D8]/15 pb-3 mb-5">
-                    <div className="flex flex-col leading-none">
-                      <span className="font-display text-lg font-black text-[#F5DD3B] tracking-tight">HH</span>
-                      <span className="font-display text-lg font-black text-[#F5DD3B] tracking-tight">GOA</span>
-                      <span className="font-mono text-[8px] font-bold text-[#F6F0D8]/50 mt-0.5">2026</span>
+                  {previewDataUrl ? (
+                    <img
+                      src={previewDataUrl}
+                      alt="Generated Builder ID"
+                      className="max-w-full h-auto max-h-[620px] object-contain rounded-xl border-2 border-[#17251C] shadow-[8px_8px_0px_#17251C]"
+                    />
+                  ) : (
+                    <div className="w-full h-[450px] bg-[#163D28] rounded-xl border-2 border-[#17251C] flex items-center justify-center font-mono text-xs text-[#F5DD3B]">
+                      GENERATING BUILDER ID...
                     </div>
-
-                    <div className="text-right">
-                      <div className="font-mono text-[9px] font-bold text-[#F6F0D8]/50 uppercase tracking-widest">
-                        BUILDER ID
-                      </div>
-                      <div className="font-mono text-sm font-black text-[#F5DD3B] tracking-wider border border-[#F5DD3B]/40 px-2 py-0.5 rounded bg-[#0F2E1D]/80 inline-block mt-0.5">
-                        {builderId}
-                      </div>
-
-                      {/* Barcode Artwork */}
-                      <div className="flex gap-0.5 justify-end h-3 mt-1.5">
-                        <div className="w-0.5 h-full bg-[#F6F0D8]/60" />
-                        <div className="w-1 h-full bg-[#F6F0D8]/60" />
-                        <div className="w-0.5 h-full bg-[#F6F0D8]/60" />
-                        <div className="w-1.5 h-full bg-[#F6F0D8]/60" />
-                        <div className="w-0.5 h-full bg-[#F6F0D8]/60" />
-                        <div className="w-1 h-full bg-[#F6F0D8]/60" />
-                        <div className="w-2 h-full bg-[#F6F0D8]/60" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Pass Body: Photo Left, Info Right */}
-                  <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-6 items-center mb-5">
-
-                    {/* Portrait Photo */}
-                    <div className="relative aspect-square rounded-lg border-2 border-[#F6F0D8]/30 overflow-hidden bg-[#0F2E1D] shadow-md">
-                      <Image
-                        src={photoUrl}
-                        alt="Builder Credential Portrait"
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-
-                    {/* Info Details */}
-                    <div className="space-y-2 relative">
-                      <h2 className="font-display font-black text-2xl md:text-3xl text-[#F5DD3B] uppercase tracking-tight leading-none">
-                        {name}
-                      </h2>
-
-                      <div className="font-mono text-xs font-bold text-[#F6F0D8] uppercase tracking-wider flex items-center gap-1.5">
-                        <span className="text-[#F6F0D8]/50">BUILDER</span>
-                        <span>•</span>
-                        <span className="text-[#F5DD3B]">⚡ {builderClass}</span>
-                      </div>
-
-                      <p className="font-mono text-xs text-[#F6F0D8]/70 uppercase leading-relaxed pt-1">
-                        {stack}
-                      </p>
-
-                      {/* Gold Circular Stamp Badge in Bottom Right */}
-                      <div className="absolute -bottom-2 right-0 w-14 h-14 rounded-full border-2 border-dashed border-[#F5DD3B] bg-[#163D28]/95 text-center flex items-center justify-center p-1 rotate-[-10deg] shadow-lg">
-                        <div className="font-mono text-[6.5px] font-extrabold text-[#F5DD3B] uppercase leading-tight">
-                          BUILDER<br />
-                          <span className="font-serif text-[10px] font-black italic text-[#F6F0D8]">GOA</span><br />
-                          2026
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* Card Footer Strip */}
-                  <div className="border-t border-[#F6F0D8]/15 pt-3 flex items-center justify-between font-mono text-[10px] text-[#F6F0D8]/60 uppercase tracking-widest">
-                    <span>📍 GOA, INDIA · 28—31 OCT 2026</span>
-                    <span className="font-bold text-[#F5DD3B]">{frame.toUpperCase()} FORMAT</span>
-                  </div>
-
+                  )}
                 </motion.div>
+
               </div>
 
             </div>

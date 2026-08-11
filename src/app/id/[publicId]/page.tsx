@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { getBuilderByPublicId, type BuilderData } from '@/lib/storage';
-import { exportIDCard } from '@/lib/canvas-renderer';
+import { renderIDCard, exportIDCard } from '@/lib/canvas-renderer';
 import { EVENT, SHARE_TEXT, CHECK_HYPE_URL } from '@/lib/config';
 
 /* ================================================================
@@ -35,6 +35,7 @@ export default function PublicIDPage() {
   const [builderId, setBuilderId] = useState('HH-26-0241');
   const [vibe, setVibe] = useState('forest-wave');
   const [frame, setFrame] = useState('portrait');
+  const [previewDataUrl, setPreviewDataUrl] = useState<string>('');
 
   // Interaction state
   const [copiedLink, setCopiedLink] = useState(false);
@@ -81,6 +82,21 @@ export default function PublicIDPage() {
     }
   }, [publicId]);
 
+  // Update live preview image matching chosen Vibe & Frame
+  useEffect(() => {
+    renderIDCard({
+      photo: builder?.photoDataUrl || photoUrl,
+      name,
+      stack,
+      builderClass,
+      builderId,
+      vibe,
+      frame,
+    }).then((url) => {
+      setPreviewDataUrl(url);
+    });
+  }, [builder, photoUrl, name, stack, builderClass, builderId, vibe, frame]);
+
   // Download Handler (Export PNG or JPG directly from validated canvas blob)
   const handleDownload = async (format: 'png' | 'jpg' = 'png') => {
     setDownloadingFormat(format);
@@ -121,13 +137,6 @@ export default function PublicIDPage() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  // Card Background Style based on Vibe
-  const cardBgClass = vibe.includes('sunburst')
-    ? 'bg-[#C77D0A]'
-    : vibe.includes('sunset')
-    ? 'bg-[#BE123C]'
-    : 'bg-[#163D28]';
-
   // ── NOT FOUND STATE ──
   if (notFound) {
     return (
@@ -165,7 +174,7 @@ export default function PublicIDPage() {
             {/* ─── 2-Column Layout: Credential Card (L) + Profile Info (R) ─── */}
             <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8 lg:gap-12 items-start">
 
-              {/* ── LEFT COLUMN: DOMINANT BUILDER ID CREDENTIAL ── */}
+              {/* ── LEFT COLUMN: DOMINANT BUILDER ID CREDENTIAL ARTIFACT ── */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -180,69 +189,19 @@ export default function PublicIDPage() {
                   </div>
                 </div>
 
-                {/* The Credential Card */}
-                <div className={`w-full ${cardBgClass} text-[#F6F0D8] border-2 border-[#17251C] rounded-xl p-6 md:p-8 shadow-[8px_8px_0px_#17251C] relative overflow-hidden transition-colors duration-300`}>
-
-                  {/* Top Punch Hole */}
-                  <div className="w-10 h-3 rounded-full bg-[#FAF7ED] border border-[#17251C] mx-auto mb-4" />
-
-                  {/* Header Row */}
-                  <div className="flex items-center justify-between border-b border-[#F6F0D8]/15 pb-3 mb-5">
-                    <div className="flex flex-col leading-none">
-                      <span className="font-display text-lg font-black text-[#F5DD3B]">HH</span>
-                      <span className="font-display text-lg font-black text-[#F5DD3B]">GOA</span>
-                      <span className="font-mono text-[8px] font-bold text-[#F6F0D8]/50 mt-0.5">2026</span>
-                    </div>
-
-                    {/* Gold Circular Stamp */}
-                    <div className="w-14 h-14 rounded-full border-2 border-dashed border-[#F5DD3B] bg-[#163D28]/95 text-center flex items-center justify-center p-1 rotate-[-10deg]">
-                      <div className="font-mono text-[6px] font-extrabold text-[#F5DD3B] uppercase leading-tight">
-                        BUILDER<br />
-                        <span className="font-serif text-[10px] font-black italic text-[#F6F0D8]">GOA</span><br />
-                        2026
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Portrait Photo */}
-                  <div className="relative aspect-square max-w-[280px] mx-auto rounded-lg border-2 border-[#F6F0D8]/30 overflow-hidden bg-[#0F2E1D] mb-5">
-                    <Image
-                      src={photoUrl}
+                {/* The Revealed Credential Canvas Image matching chosen Vibe & Frame */}
+                <div className="w-full flex justify-center items-center">
+                  {previewDataUrl ? (
+                    <img
+                      src={previewDataUrl}
                       alt={`${name} Builder ID`}
-                      fill
-                      className="object-cover"
+                      className="max-w-full h-auto max-h-[620px] object-contain rounded-xl border-2 border-[#17251C] shadow-[8px_8px_0px_#17251C]"
                     />
-                  </div>
-
-                  {/* Name & Info */}
-                  <div className="text-center space-y-2 mb-4">
-                    <h2 className="font-display font-black text-2xl md:text-3xl text-[#F5DD3B] uppercase tracking-tight leading-none">
-                      {name}
-                    </h2>
-                    <div className="font-mono text-xs font-bold text-[#F6F0D8] uppercase tracking-wider flex items-center justify-center gap-1.5">
-                      <span className="text-[#F6F0D8]/50">BUILDER</span>
-                      <span>•</span>
-                      <span className="text-[#F5DD3B]">⚡ {builderClass}</span>
+                  ) : (
+                    <div className="w-full h-[450px] bg-[#163D28] rounded-xl border-2 border-[#17251C] flex items-center justify-center font-mono text-xs text-[#F5DD3B]">
+                      LOADING BUILDER ID...
                     </div>
-                    <p className="font-mono text-xs text-[#F6F0D8]/70 uppercase">{stack}</p>
-                  </div>
-
-                  {/* Card Footer */}
-                  <div className="border-t border-[#F6F0D8]/15 pt-3 flex items-center justify-between font-mono text-[10px] text-[#F6F0D8]/50 uppercase tracking-widest">
-                    <span>HH GOA 2026 · BUILDER</span>
-                    <span className="font-bold text-[#F5DD3B]">{builderId}</span>
-                  </div>
-
-                  {/* Barcode */}
-                  <div className="flex justify-center gap-0.5 h-5 mt-3">
-                    <div className="w-0.5 h-full bg-[#F6F0D8]/50" />
-                    <div className="w-1 h-full bg-[#F6F0D8]/50" />
-                    <div className="w-0.5 h-full bg-[#F6F0D8]/50" />
-                    <div className="w-1.5 h-full bg-[#F6F0D8]/50" />
-                    <div className="w-0.5 h-full bg-[#F6F0D8]/50" />
-                    <div className="w-1 h-full bg-[#F6F0D8]/50" />
-                    <div className="w-2 h-full bg-[#F6F0D8]/50" />
-                  </div>
+                  )}
                 </div>
               </motion.div>
 
