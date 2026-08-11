@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { renderIDCard } from '@/lib/canvas-renderer';
 
 /* ================================================================
    FRAME FORMATS LIST
@@ -45,13 +46,6 @@ const FRAME_FORMATS = [
     subtitle: 'SMALL FORMAT. BIG FLEX.',
     description: 'Compact builder flex.',
   },
-  {
-    id: 'ornate',
-    number: '06',
-    title: 'ORNATE BADGE',
-    subtitle: 'FOR THE BUILDER WHO DOES EXTRA.',
-    description: 'Maximum builder energy.',
-  },
 ];
 
 /* ================================================================
@@ -75,6 +69,10 @@ export default function FrameSelectPage() {
   const [stack, setStack] = useState('AI/ML // PYTHON // NEXT.JS');
   const [builderClass, setBuilderClass] = useState('NEURAL NOMAD');
   const [photoUrl, setPhotoUrl] = useState('/builder-solo.png');
+  const [vibe, setVibe] = useState('forest-wave');
+
+  // Live Canvas Data URLs for each template card
+  const [formatPreviews, setFormatPreviews] = useState<Record<string, string>>({});
 
   // Validation / missing fields state
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -96,8 +94,33 @@ export default function FrameSelectPage() {
 
       const savedPhoto = localStorage.getItem('hh_builder_photo');
       if (savedPhoto) setPhotoUrl(savedPhoto);
+
+      const savedPalette = localStorage.getItem('hh_builder_palette');
+      if (savedPalette) setVibe(savedPalette);
     }
   }, []);
+
+  // Generate live template canvas Data URLs for each format card
+  useEffect(() => {
+    const loadPreviews = async () => {
+      const results: Record<string, string> = {};
+      const formats = ['portrait', 'landscape', 'circle', 'arch', 'slim'];
+      for (const f of formats) {
+        results[f] = await renderIDCard({
+          photo: photoUrl,
+          name,
+          stack,
+          builderClass,
+          builderId: 'HH-26-0000',
+          vibe,
+          frame: f,
+        });
+      }
+      setFormatPreviews(results);
+    };
+
+    loadPreviews();
+  }, [photoUrl, name, stack, builderClass, vibe]);
 
   // Pre-generation check & navigation to Step 05: Generate
   const handleProceedGenerate = () => {
@@ -202,7 +225,7 @@ export default function FrameSelectPage() {
               <p className="font-mono text-xs md:text-sm text-[#17251C]/75 leading-relaxed">
                 One identity.
                 <br />
-                Six ways to ship it.
+                Five unique builder templates.
               </p>
             </div>
 
@@ -213,8 +236,8 @@ export default function FrameSelectPage() {
               </div>
             )}
 
-            {/* ─── 6 FORMAT CARDS GALLERY ─── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 items-stretch mb-10">
+            {/* ─── 5 FORMAT CARDS GALLERY ─── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 items-stretch mb-10">
 
               {FRAME_FORMATS.map((fmt) => {
                 const isSelected = selectedFormat === fmt.id;
@@ -252,85 +275,17 @@ export default function FrameSelectPage() {
                         {fmt.subtitle}
                       </div>
 
-                      {/* Visual Preview Container */}
+                      {/* Visual Canvas Preview Container */}
                       <div className="bg-[#0F2E1D] border border-[#F6F0D8]/20 rounded p-2 text-center mb-3 relative overflow-hidden flex flex-col items-center justify-center min-h-[140px]">
-
-                        {/* Format 01: Portrait */}
-                        {fmt.id === 'portrait' && (
-                          <div className="w-full">
-                            <div className="w-10 h-10 mx-auto rounded overflow-hidden border border-[#F5DD3B]/40 relative mb-1.5">
-                              <Image src={photoUrl} alt="Preview" fill className="object-cover" />
-                            </div>
-                            <div className="font-display font-black text-[9px] text-[#F5DD3B] truncate">{name}</div>
-                            <div className="font-mono text-[7px] text-[#F6F0D8]/60 truncate">{stack}</div>
-                            <div className="font-mono text-[7px] text-[#F5DD3B] font-bold mt-1">⚡ {builderClass}</div>
-                            <div className="font-mono text-[6px] text-[#F6F0D8]/40 mt-1">HH-26-0000</div>
-                          </div>
+                        {formatPreviews[fmt.id] ? (
+                          <img
+                            src={formatPreviews[fmt.id]}
+                            alt={`${fmt.title} preview`}
+                            className="max-w-full max-h-[130px] object-contain shadow-sm"
+                          />
+                        ) : (
+                          <div className="font-mono text-[8px] text-[#F5DD3B]">LOADING PREVIEW...</div>
                         )}
-
-                        {/* Format 02: Landscape */}
-                        {fmt.id === 'landscape' && (
-                          <div className="w-full flex items-center gap-1.5 p-1">
-                            <div className="w-10 h-10 rounded overflow-hidden border border-[#F5DD3B]/40 relative shrink-0">
-                              <Image src={photoUrl} alt="Preview" fill className="object-cover" />
-                            </div>
-                            <div className="text-left overflow-hidden">
-                              <div className="font-display font-black text-[8px] text-[#F5DD3B] truncate">{name}</div>
-                              <div className="font-mono text-[6.5px] text-[#F6F0D8]/60 truncate">{stack}</div>
-                              <div className="font-mono text-[6.5px] text-[#F5DD3B]">⚡ {builderClass}</div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Format 03: Circle PFP */}
-                        {fmt.id === 'circle' && (
-                          <div className="relative">
-                            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#F5DD3B] relative mx-auto">
-                              <Image src={photoUrl} alt="Preview" fill className="object-cover" />
-                            </div>
-                            <div className="w-6 h-6 rounded-full border border-dashed border-[#F5DD3B] bg-[#163D28] text-[4.5px] font-mono text-[#F5DD3B] flex items-center justify-center text-center absolute -bottom-1 -right-1 rotate-[-8deg]">
-                              GOA<br />2026
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Format 04: Arch Badge */}
-                        {fmt.id === 'arch' && (
-                          <div className="w-full">
-                            <div className="border border-[#F5DD3B]/60 rounded-t-full p-1 border-b-0 text-[6px] font-mono text-[#F5DD3B] font-bold">
-                              HACKER HOUSE GOA
-                            </div>
-                            <div className="w-10 h-10 mx-auto rounded overflow-hidden border border-[#F6F0D8]/30 relative my-1">
-                              <Image src={photoUrl} alt="Preview" fill className="object-cover" />
-                            </div>
-                            <div className="font-display font-black text-[8px] text-[#F5DD3B] truncate">{name}</div>
-                            <div className="font-mono text-[6px] text-[#F6F0D8]/50">HH-26-0000</div>
-                          </div>
-                        )}
-
-                        {/* Format 05: Slim Badge */}
-                        {fmt.id === 'slim' && (
-                          <div className="w-full flex flex-col items-center">
-                            <div className="w-8 h-10 rounded overflow-hidden border border-[#F5DD3B]/40 relative mb-1">
-                              <Image src={photoUrl} alt="Preview" fill className="object-cover" />
-                            </div>
-                            <div className="font-display font-black text-[7.5px] text-[#F5DD3B] truncate w-full">{name}</div>
-                            <div className="font-mono text-[6px] text-[#F6F0D8]/60 truncate w-full">⚡ {builderClass}</div>
-                            <div className="font-mono text-[5.5px] text-[#F6F0D8]/40 mt-0.5">HH-26-0000</div>
-                          </div>
-                        )}
-
-                        {/* Format 06: Ornate Badge */}
-                        {fmt.id === 'ornate' && (
-                          <div className="w-full border border-dashed border-[#F5DD3B]/50 p-1 rounded">
-                            <div className="font-serif text-[6px] italic text-[#E62E78] font-bold">GOA 2026</div>
-                            <div className="w-9 h-9 mx-auto rounded-full overflow-hidden border border-[#F5DD3B] relative my-1">
-                              <Image src={photoUrl} alt="Preview" fill className="object-cover" />
-                            </div>
-                            <div className="font-display font-black text-[8px] text-[#F5DD3B] truncate">{name}</div>
-                          </div>
-                        )}
-
                       </div>
                     </div>
 
@@ -365,7 +320,7 @@ export default function FrameSelectPage() {
 
               <button
                 onClick={handleProceedGenerate}
-                className="px-8 py-3.5 bg-[#F5DD3B] text-[#17251C] font-mono text-xs md:text-sm font-bold uppercase tracking-wider border-2 border-[#17251C] shadow-[4px_4px_0px_#17251C] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[6px_6px_0px_#17251C] active:translate-x-[1px] active:translate-y-[1px] transition-all"
+                className="px-8 py-3.5 bg-[#F5DD3B] text-[#17251C] font-mono text-xs md:text-sm font-bold uppercase tracking-wider border-2 border-[#17251C] shadow-[4px_4px_0px_#17251C] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[6px_6px_0px_#17251C] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
               >
                 GENERATE MY ID →
               </button>
