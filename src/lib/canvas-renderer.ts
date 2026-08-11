@@ -247,233 +247,225 @@ export async function renderIDCard(options: RenderOptions): Promise<string> {
 }
 
 /**
- * Direct, binary-validated export & download pipeline.
- * Performs byte-level signature verification before allowing browser download.
+ * Direct binary export pipeline with showSaveFilePicker & byte-level magic signature checks.
  * Formats clean filenames: HH-GOA-2026-[NAME].png or HH-GOA-2026-[NAME].jpg
  */
-export function exportIDCard(
+export async function exportIDCard(
   options: RenderOptions,
   format: 'png' | 'jpg' = 'png'
 ): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const targetFormat = (format || options.format || 'png').toLowerCase();
-      const isJpeg = targetFormat === 'jpg' || targetFormat === 'jpeg';
-      const mimeType = isJpeg ? 'image/jpeg' : 'image/png';
-      const ext = isJpeg ? 'jpg' : 'png';
+  const targetFormat = (format || options.format || 'png').toLowerCase();
+  const isJpeg = targetFormat === 'jpg' || targetFormat === 'jpeg';
+  const mimeType = isJpeg ? 'image/jpeg' : 'image/png';
+  const ext = isJpeg ? 'jpg' : 'png';
 
-      // 1. Format clean filename: HH-GOA-2026-[NAME].[ext]
-      const cleanName = (options.name || 'BUILDER')
-        .trim()
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
+  // 1. Format clean filename: HH-GOA-2026-[NAME].[ext]
+  const cleanName = (options.name || 'BUILDER')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 
-      const filename = `HH-GOA-2026-${cleanName || 'BUILDER'}.${ext}`;
+  const filename = `HH-GOA-2026-${cleanName || 'BUILDER'}.${ext}`;
 
-      // 2. Render canvas at 1200x1600
-      const canvas = document.createElement('canvas');
-      canvas.width = CANVAS_W;
-      canvas.height = CANVAS_H;
-      const ctx = canvas.getContext('2d')!;
+  // 2. Render canvas at 1200x1600
+  const canvas = document.createElement('canvas');
+  canvas.width = CANVAS_W;
+  canvas.height = CANVAS_H;
+  const ctx = canvas.getContext('2d')!;
 
-      // Background
-      ctx.fillStyle = '#163D28';
-      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+  // Background
+  ctx.fillStyle = '#163D28';
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-      // Borders
-      ctx.strokeStyle = '#17251C';
-      ctx.lineWidth = 16;
-      ctx.strokeRect(8, 8, CANVAS_W - 16, CANVAS_H - 16);
+  // Borders
+  ctx.strokeStyle = '#17251C';
+  ctx.lineWidth = 16;
+  ctx.strokeRect(8, 8, CANVAS_W - 16, CANVAS_H - 16);
 
-      ctx.strokeStyle = '#F5DD3B';
-      ctx.lineWidth = 4;
-      ctx.strokeRect(32, 32, CANVAS_W - 64, CANVAS_H - 64);
+  ctx.strokeStyle = '#F5DD3B';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(32, 32, CANVAS_W - 64, CANVAS_H - 64);
 
-      // Logo Header
-      ctx.fillStyle = '#F5DD3B';
-      ctx.font = '900 84px serif';
-      ctx.fillText('HH', 70, 140);
+  // Logo Header
+  ctx.fillStyle = '#F5DD3B';
+  ctx.font = '900 84px serif';
+  ctx.fillText('HH', 70, 140);
 
-      ctx.fillStyle = '#F6F0D8';
-      ctx.font = '900 48px serif';
-      ctx.fillText('GOA', 70, 200);
+  ctx.fillStyle = '#F6F0D8';
+  ctx.font = '900 48px serif';
+  ctx.fillText('GOA', 70, 200);
 
-      ctx.fillStyle = '#F5DD3B';
-      ctx.font = '700 32px monospace';
-      ctx.fillText('2026', 70, 245);
+  ctx.fillStyle = '#F5DD3B';
+  ctx.font = '700 32px monospace';
+  ctx.fillText('2026', 70, 245);
 
-      // Stamp Top Right
-      ctx.fillStyle = '#F5DD3B';
+  // Stamp Top Right
+  ctx.fillStyle = '#F5DD3B';
+  ctx.beginPath();
+  ctx.arc(CANVAS_W - 140, 140, 50, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#163D28';
+  ctx.font = '800 16px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('BUILDER', CANVAS_W - 140, 135);
+  ctx.font = '900 italic 20px serif';
+  ctx.fillText('GOA', CANVAS_W - 140, 155);
+  ctx.textAlign = 'left';
+
+  // Photo Box
+  const photoSize = 780;
+  const photoX = (CANVAS_W - photoSize) / 2;
+  const photoY = 280;
+
+  ctx.fillStyle = '#0F2E1D';
+  ctx.fillRect(photoX, photoY, photoSize, photoSize);
+  ctx.strokeStyle = '#17251C';
+  ctx.lineWidth = 8;
+  ctx.strokeRect(photoX, photoY, photoSize, photoSize);
+
+  if (options.photo) {
+    const img = await loadImage(options.photo);
+    if (img) {
+      ctx.save();
       ctx.beginPath();
-      ctx.arc(CANVAS_W - 140, 140, 50, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.rect(photoX, photoY, photoSize, photoSize);
+      ctx.clip();
 
-      ctx.fillStyle = '#163D28';
-      ctx.font = '800 16px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('BUILDER', CANVAS_W - 140, 135);
-      ctx.font = '900 italic 20px serif';
-      ctx.fillText('GOA', CANVAS_W - 140, 155);
-      ctx.textAlign = 'left';
+      const scale = options.zoom || 1;
+      const posX = options.position?.x || 0;
+      const posY = options.position?.y || 0;
 
-      // Photo Box
-      const photoSize = 780;
-      const photoX = (CANVAS_W - photoSize) / 2;
-      const photoY = 280;
+      const drawW = photoSize * scale;
+      const drawH = photoSize * scale;
+      const drawX = photoX + (photoSize - drawW) / 2 + posX * (photoSize / 300);
+      const drawY = photoY + (photoSize - drawH) / 2 + posY * (photoSize / 300);
 
-      ctx.fillStyle = '#0F2E1D';
-      ctx.fillRect(photoX, photoY, photoSize, photoSize);
-      ctx.strokeStyle = '#17251C';
-      ctx.lineWidth = 8;
-      ctx.strokeRect(photoX, photoY, photoSize, photoSize);
-
-      if (options.photo) {
-        const img = await loadImage(options.photo);
-        if (img) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(photoX, photoY, photoSize, photoSize);
-          ctx.clip();
-
-          const scale = options.zoom || 1;
-          const posX = options.position?.x || 0;
-          const posY = options.position?.y || 0;
-
-          const drawW = photoSize * scale;
-          const drawH = photoSize * scale;
-          const drawX = photoX + (photoSize - drawW) / 2 + posX * (photoSize / 300);
-          const drawY = photoY + (photoSize - drawH) / 2 + posY * (photoSize / 300);
-
-          ctx.drawImage(img, drawX, drawY, drawW, drawH);
-          ctx.restore();
-        } else {
-          ctx.fillStyle = '#1E5B3A';
-          ctx.fillRect(photoX + 20, photoY + 20, photoSize - 40, photoSize - 40);
-        }
-      }
-
-      // Name & Details
-      const infoY = photoY + photoSize + 90;
-      ctx.fillStyle = '#F5DD3B';
-      ctx.font = '900 68px serif';
-      ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), 70, infoY);
-
-      ctx.fillStyle = '#F6F0D8';
-      ctx.font = '600 32px monospace';
-      ctx.fillText((options.stack || 'AI/ML // PYTHON // NEXT.JS').toUpperCase(), 70, infoY + 60);
-
-      ctx.fillStyle = '#F5DD3B';
-      ctx.font = '800 38px monospace';
-      ctx.fillText(`⚡ ${(options.builderClass || 'NEURAL NOMAD').toUpperCase()}`, 70, infoY + 115);
-
-      // Gold Stamp Right
-      const stampX = CANVAS_W - 160;
-      const stampY = infoY + 40;
-      ctx.strokeStyle = '#F5DD3B';
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.arc(stampX, stampY, 75, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.fillStyle = '#F5DD3B';
-      ctx.font = '800 18px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('BUILDER OF', stampX, stampY - 20);
-      ctx.font = '900 italic 32px serif';
-      ctx.fillStyle = '#F6F0D8';
-      ctx.fillText('GOA', stampX, stampY + 10);
-      ctx.font = '700 18px monospace';
-      ctx.fillStyle = '#F5DD3B';
-      ctx.fillText('2026', stampX, stampY + 38);
-      ctx.textAlign = 'left';
-
-      // Separator Line
-      const bottomY = CANVAS_H - 100;
-      ctx.strokeStyle = '#F5DD3B';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(70, bottomY);
-      ctx.lineTo(CANVAS_W - 70, bottomY);
-      ctx.stroke();
-
-      // Builder ID Code
-      ctx.fillStyle = '#F6F0D8';
-      ctx.font = '800 44px monospace';
-      ctx.fillText(options.builderId || 'HH-26-0241', 70, bottomY + 50);
-
-      // Barcode
-      let barcodeX = CANVAS_W - 320;
-      const barcodeY = bottomY + 15;
-      const barcodeHeight = 45;
-      const bars = [4, 2, 6, 2, 4, 8, 2, 4, 2, 6, 4, 2, 8, 2, 4, 6];
-
-      ctx.fillStyle = '#F6F0D8';
-      for (const b of bars) {
-        ctx.fillRect(barcodeX, barcodeY, b, barcodeHeight);
-        barcodeX += b + 4;
-      }
-
-      // 3. Export to Blob directly with strict byte-level signature verification
-      canvas.toBlob(
-        async (blob) => {
-          if (!blob) {
-            const err = new Error(`[Canvas Export Error]: Failed to create Blob for ${mimeType}`);
-            console.error(err);
-            reject(err);
-            return;
-          }
-
-          if (blob.size === 0) {
-            const err = new Error(`[Canvas Export Error]: Created Blob for ${mimeType} is 0 bytes`);
-            console.error(err);
-            reject(err);
-            return;
-          }
-
-          // Step 3 & Step 7: Byte-level signature check
-          const signatureResult = await validateImageBinary(blob, ext as 'png' | 'jpg');
-          console.log(
-            `[Export Diagnostic]: MIME=${blob.type}, Size=${blob.size} bytes, ValidSignature=${signatureResult.valid}, Detected=${signatureResult.detectedFormat}, MagicBytes=${signatureResult.signatureHex}`
-          );
-
-          if (!signatureResult.valid) {
-            const err = new Error(
-              `[Export Validation Failed]: Received ${signatureResult.detectedFormat} payload instead of ${mimeType}. Header: ${signatureResult.signatureHex}. Sample: ${signatureResult.sampleText.slice(0, 50)}`
-            );
-            console.error(err);
-            reject(err);
-            return;
-          }
-
-          // Step 9: Verified download
-          const blobUrl = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = blobUrl;
-          a.download = filename;
-          a.setAttribute('download', filename);
-          document.body.appendChild(a);
-          a.click();
-
-          setTimeout(() => {
-            if (document.body.contains(a)) {
-              document.body.removeChild(a);
-            }
-            URL.revokeObjectURL(blobUrl);
-          }, 3000);
-
-          resolve();
-        },
-        mimeType,
-        0.95
-      );
-    } catch (err) {
-      console.error('[Export ID Card Exception]:', err);
-      reject(err);
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = '#1E5B3A';
+      ctx.fillRect(photoX + 20, photoY + 20, photoSize - 40, photoSize - 40);
     }
-  });
+  }
+
+  // Name & Details
+  const infoY = photoY + photoSize + 90;
+  ctx.fillStyle = '#F5DD3B';
+  ctx.font = '900 68px serif';
+  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), 70, infoY);
+
+  ctx.fillStyle = '#F6F0D8';
+  ctx.font = '600 32px monospace';
+  ctx.fillText((options.stack || 'AI/ML // PYTHON // NEXT.JS').toUpperCase(), 70, infoY + 60);
+
+  ctx.fillStyle = '#F5DD3B';
+  ctx.font = '800 38px monospace';
+  ctx.fillText(`⚡ ${(options.builderClass || 'NEURAL NOMAD').toUpperCase()}`, 70, infoY + 115);
+
+  // Gold Stamp Right
+  const stampX = CANVAS_W - 160;
+  const stampY = infoY + 40;
+  ctx.strokeStyle = '#F5DD3B';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.arc(stampX, stampY, 75, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = '#F5DD3B';
+  ctx.font = '800 18px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('BUILDER OF', stampX, stampY - 20);
+  ctx.font = '900 italic 32px serif';
+  ctx.fillStyle = '#F6F0D8';
+  ctx.fillText('GOA', stampX, stampY + 10);
+  ctx.font = '700 18px monospace';
+  ctx.fillStyle = '#F5DD3B';
+  ctx.fillText('2026', stampX, stampY + 38);
+  ctx.textAlign = 'left';
+
+  // Separator Line
+  const bottomY = CANVAS_H - 100;
+  ctx.strokeStyle = '#F5DD3B';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(70, bottomY);
+  ctx.lineTo(CANVAS_W - 70, bottomY);
+  ctx.stroke();
+
+  // Builder ID Code
+  ctx.fillStyle = '#F6F0D8';
+  ctx.font = '800 44px monospace';
+  ctx.fillText(options.builderId || 'HH-26-0241', 70, bottomY + 50);
+
+  // Barcode
+  let barcodeX = CANVAS_W - 320;
+  const barcodeY = bottomY + 15;
+  const barcodeHeight = 45;
+  const bars = [4, 2, 6, 2, 4, 8, 2, 4, 2, 6, 4, 2, 8, 2, 4, 6];
+
+  ctx.fillStyle = '#F6F0D8';
+  for (const b of bars) {
+    ctx.fillRect(barcodeX, barcodeY, b, barcodeHeight);
+    barcodeX += b + 4;
+  }
+
+  // 3. Synchronous dataUrl to binary Blob conversion
+  const dataUrl = canvas.toDataURL(mimeType, 0.95);
+  const parts = dataUrl.split(';base64,');
+  const raw = window.atob(parts[1]);
+  const uInt8Array = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) {
+    uInt8Array[i] = raw.charCodeAt(i);
+  }
+
+  const blob = new Blob([uInt8Array], { type: mimeType });
+
+  // 4. Magic byte signature validation
+  const sig = await validateImageBinary(blob, ext as 'png' | 'jpg');
+  console.log(`[Export Diagnostic]: Filename=${filename}, Size=${blob.size} bytes, ValidSignature=${sig.valid}, DetectedFormat=${sig.detectedFormat}, MagicHex=${sig.signatureHex}`);
+
+  if (!sig.valid) {
+    throw new Error(`[Export Failed]: Magic byte signature validation failed for ${filename}`);
+  }
+
+  // 5. Try Native File System Access API (showSaveFilePicker)
+  if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
+    try {
+      const handle = await (window as any).showSaveFilePicker({
+        suggestedName: filename,
+        types: [
+          {
+            description: isJpeg ? 'JPEG Image (*.jpg)' : 'PNG Image (*.png)',
+            accept: { [mimeType]: [`.${ext}`] },
+          },
+        ],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch (pickerErr: any) {
+      if (pickerErr.name === 'AbortError') return;
+    }
+  }
+
+  // 6. Anchor download fallback
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = blobUrl;
+  a.download = filename;
+  a.setAttribute('download', filename);
+  document.body.appendChild(a);
+  a.click();
+
+  setTimeout(() => {
+    if (document.body.contains(a)) document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  }, 5000);
 }
 
 /**
