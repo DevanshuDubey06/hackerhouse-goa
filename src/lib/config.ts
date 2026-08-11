@@ -4,6 +4,7 @@
 // ============================================================
 
 export const OFFICIAL_APPLY_URL = 'https://hhgoa.com/';
+export const CHECK_HYPE_URL = 'https://hhgoa.com/#check-hype';
 
 export const EVENT = {
   name: 'Hacker House Goa',
@@ -188,7 +189,7 @@ export const FRAME_FORMATS = [
 export const NAV_LINKS = [
   { label: 'THE HOUSE', href: '/house' },
   { label: 'BUILD YOUR ID', href: '/create' },
-  { label: 'CHECK HYPE', href: '/radar' },
+  { label: 'CHECK HYPE', href: CHECK_HYPE_URL },
 ] as const;
 
 export const SHARE_TEXT = (builderClass: string, builderId: string) =>

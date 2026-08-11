@@ -11,7 +11,7 @@ import { exportIDCard } from '@/lib/canvas-renderer';
    DECORATIVE STRIP
    ================================================================ */
 
-const STRIP_PATTERN = `url("data:image/svg+xml,%3Csvg width='60' height='22' viewBox='0 0 60 22' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='60' height='22' fill='%23C41E62'/%3E%3Crect width='60' height='1' fill='%2317251C'/%3E%3Crect y='21' width='60' height='1' fill='%2317251C'/%3E%3Cpath d='M30 3L38 11L30 19L22 11Z' fill='%231E5B3A' stroke='%23F5DD3B' stroke-width='0.6'/%3E%3Ccircle cx='30' cy='11' r='2.5' fill='%231E5B3A'/%3E%3Ccircle cx='8' cy='11' r='3.5' fill='%231E5B3A'/%3E%3Ccircle cx='8' cy='11' r='1.5' fill='%23F5DD3B'/%3E%3Ccircle cx='52' cy='11' r='3.5' fill='%231E5B3A'/%3E%3Ccircle cx='52' cy='11' r='1.5' fill='%23F5DD3B'/%3E%3Cellipse cx='19' cy='6' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(25 19 6)'/%3E%3Cellipse cx='41' cy='6' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(-25 41 6)'/%3E%3Cellipse cx='19' cy='16' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(-25 19 16)'/%3E%3Cellipse cx='41' cy='16' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(25 41 16)'/%3E%3Ccircle cx='30' cy='3' r='1' fill='%23F5DD3B' opacity='0.6'/%3E%3Ccircle cx='30' cy='19' r='1' fill='%23F5DD3B' opacity='0.6'/%3E%3C/svg%3E")`;
+const STRIP_PATTERN = `url("data:image/svg+xml,%3Csvg width='60' height='22' viewBox='0 0 60 22' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='60' height='22' fill='%23C41E62'/%3E%3Crect width='60' height='1' fill='%2317251C'/%3E%3Crect y='21' width='60' height='1' fill='%2317251C'/%3E%3Cpath d='M30 3L38 11L30 19L22 11Z' fill='%231E5B3A' stroke='%23F5DD3B' stroke-width='0.6'/%3E%3Ccircle cx='30' cy='11' r='2.5' fill='%23F5DD3B'/%3E%3Ccircle cx='8' cy='11' r='3.5' fill='%231E5B3A'/%3E%3Ccircle cx='8' cy='11' r='1.5' fill='%23F5DD3B'/%3E%3Ccircle cx='52' cy='11' r='3.5' fill='%231E5B3A'/%3E%3Ccircle cx='52' cy='11' r='1.5' fill='%23F5DD3B'/%3E%3Cellipse cx='19' cy='6' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(25 19 6)'/%3E%3Cellipse cx='41' cy='6' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(-25 41 6)'/%3E%3Cellipse cx='19' cy='16' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(-25 19 16)'/%3E%3Cellipse cx='41' cy='16' rx='3.5' ry='1.5' fill='%231E5B3A' transform='rotate(25 41 16)'/%3E%3Ccircle cx='30' cy='3' r='1' fill='%23F5DD3B' opacity='0.6'/%3E%3Ccircle cx='30' cy='19' r='1' fill='%23F5DD3B' opacity='0.6'/%3E%3C/svg%3E")`;
 
 /* ================================================================
    PAGE 07 — STEP 05: GENERATE + REVEAL
@@ -26,6 +26,8 @@ export default function GenerateStepPage() {
   const [builderClass, setBuilderClass] = useState('NEURAL NOMAD');
   const [photoUrl, setPhotoUrl] = useState('/builder-solo.png');
   const [builderId, setBuilderId] = useState('HH-26-0241');
+  const [vibe, setVibe] = useState('forest-wave');
+  const [frame, setFrame] = useState('portrait');
 
   // Animation Sequence States
   const [step1Done, setStep1Done] = useState(false);
@@ -52,6 +54,12 @@ export default function GenerateStepPage() {
       const savedPhoto = localStorage.getItem('hh_builder_photo');
       if (savedPhoto) setPhotoUrl(savedPhoto);
 
+      const savedPalette = localStorage.getItem('hh_builder_palette');
+      if (savedPalette) setVibe(savedPalette);
+
+      const savedFormat = localStorage.getItem('hh_builder_format');
+      if (savedFormat) setFrame(savedFormat);
+
       // Generate or retrieve persistent Builder ID
       let existingId = localStorage.getItem('hh_builder_id');
       if (!existingId) {
@@ -76,7 +84,7 @@ export default function GenerateStepPage() {
     };
   }, []);
 
-  // Download Action (Export PNG or JPG directly from validated canvas blob)
+  // Download Action (Export PNG or JPG directly with selected Vibe and Frame format)
   const handleDownload = async (format: 'png' | 'jpg') => {
     try {
       setDownloadingFormat(format);
@@ -87,6 +95,8 @@ export default function GenerateStepPage() {
           stack,
           builderClass,
           builderId,
+          vibe,
+          frame,
         },
         format
       );
@@ -120,6 +130,13 @@ export default function GenerateStepPage() {
     }
     router.push('/create');
   };
+
+  // Card Background Style based on Vibe
+  const cardBgClass = vibe.includes('sunburst')
+    ? 'bg-[#C77D0A]'
+    : vibe.includes('sunset')
+    ? 'bg-[#BE123C]'
+    : 'bg-[#163D28]';
 
   return (
     <div className="min-h-screen bg-[#1E5B3A] text-[#F6F0D8] grain-overlay">
@@ -291,7 +308,7 @@ export default function GenerateStepPage() {
                   initial={{ opacity: 0, scale: 0.95, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  className="w-full bg-[#163D28] text-[#F6F0D8] border-2 border-[#17251C] rounded-xl p-6 md:p-8 shadow-[8px_8px_0px_#17251C] relative overflow-hidden"
+                  className={`w-full ${cardBgClass} text-[#F6F0D8] border-2 border-[#17251C] rounded-xl p-6 md:p-8 shadow-[8px_8px_0px_#17251C] relative overflow-hidden transition-colors duration-300`}
                 >
                   {/* Top Punch Hole */}
                   <div className="w-10 h-3 rounded-full bg-[#FAF7ED] border border-[#17251C] mx-auto mb-4" />
@@ -308,7 +325,7 @@ export default function GenerateStepPage() {
                       <div className="font-mono text-[9px] font-bold text-[#F6F0D8]/50 uppercase tracking-widest">
                         BUILDER ID
                       </div>
-                      <div className="font-mono text-sm font-black text-[#F5DD3B] tracking-wider border border-[#F5DD3B]/40 px-2 py-0.5 rounded bg-[#0F2E1D] inline-block mt-0.5">
+                      <div className="font-mono text-sm font-black text-[#F5DD3B] tracking-wider border border-[#F5DD3B]/40 px-2 py-0.5 rounded bg-[#0F2E1D]/80 inline-block mt-0.5">
                         {builderId}
                       </div>
 
@@ -369,7 +386,7 @@ export default function GenerateStepPage() {
                   {/* Card Footer Strip */}
                   <div className="border-t border-[#F6F0D8]/15 pt-3 flex items-center justify-between font-mono text-[10px] text-[#F6F0D8]/60 uppercase tracking-widest">
                     <span>📍 GOA, INDIA · 28—31 OCT 2026</span>
-                    <span>🌴 🌊</span>
+                    <span className="font-bold text-[#F5DD3B]">{frame.toUpperCase()} FORMAT</span>
                   </div>
 
                 </motion.div>

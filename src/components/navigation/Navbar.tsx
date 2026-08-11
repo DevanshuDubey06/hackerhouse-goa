@@ -77,6 +77,20 @@ export function Navbar() {
             <div className="hidden lg:flex items-center ml-auto">
               {NAV_LINKS.map((link) => {
                 const isActive = pathname === link.href;
+                const isExternal = link.href.startsWith('http');
+                if (isExternal) {
+                  return (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-[11px] tracking-[0.1em] font-semibold uppercase no-underline px-5 h-9 flex items-center border-l border-[#F6F0D8]/12 text-[#F6F0D8]/65 hover:text-[#F6F0D8] transition-colors whitespace-nowrap"
+                    >
+                      {link.label} ↗
+                    </a>
+                  );
+                }
                 return (
                   <Link
                     key={link.href}
@@ -133,25 +147,39 @@ export function Navbar() {
             </div>
 
             <nav className="flex flex-col items-center gap-6" aria-label="Mobile navigation">
-              {NAV_LINKS.map((link, i) => (
-                <motion.div
-                  key={link.href}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 + 0.08 }}
-                >
-                  <Link
-                    href={link.href}
-                    className={`font-display text-2xl sm:text-3xl uppercase tracking-tight no-underline transition-colors ${
-                      pathname === link.href
-                        ? 'text-[#F5DD3B]'
-                        : 'text-[#F6F0D8] hover:text-[#E62E78]'
-                    }`}
+              {NAV_LINKS.map((link, i) => {
+                const isExternal = link.href.startsWith('http');
+                return (
+                  <motion.div
+                    key={link.href}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 + 0.08 }}
                   >
-                    {link.label}
-                  </Link>
-                </motion.div>
-              ))}
+                    {isExternal ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-display text-2xl sm:text-3xl uppercase tracking-tight no-underline text-[#F6F0D8] hover:text-[#E62E78] transition-colors"
+                      >
+                        {link.label} ↗
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className={`font-display text-2xl sm:text-3xl uppercase tracking-tight no-underline transition-colors ${
+                          pathname === link.href
+                            ? 'text-[#F5DD3B]'
+                            : 'text-[#F6F0D8] hover:text-[#E62E78]'
+                        }`}
+                      >
+                        {link.label}
+                      </Link>
+                    )}
+                  </motion.div>
+                );
+              })}
 
               <motion.div
                 initial={{ opacity: 0, y: 15 }}

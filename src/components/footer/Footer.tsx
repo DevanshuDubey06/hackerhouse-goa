@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { EVENT, OFFICIAL_APPLY_URL, SOCIAL } from '@/lib/config';
+import { EVENT, OFFICIAL_APPLY_URL, SOCIAL, CHECK_HYPE_URL } from '@/lib/config';
 
 export function Footer() {
   return (
@@ -43,12 +43,14 @@ export function Footer() {
             >
               BUILD YOUR ID
             </Link>
-            <Link
-              href="/radar"
+            <a
+              href={CHECK_HYPE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-[#F6F0D8]/75 hover:text-[#F5DD3B] transition-colors no-underline"
             >
               CHECK HYPE
-            </Link>
+            </a>
             <a
               href={OFFICIAL_APPLY_URL}
               target="_blank"

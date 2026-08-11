@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { CHECK_HYPE_URL } from '@/lib/config';
 
 /* ================================================================
    STAT BAR ICONS — line-drawn editorial style matching reference
@@ -148,24 +149,14 @@ export function Hero() {
                   BUILD MY BUILDER ID <span className="text-[15px] leading-none">→</span>
                 </Link>
 
-                <Link
-                  href="/radar"
+                <a
+                  href={CHECK_HYPE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-5 md:px-6 py-3 bg-transparent text-[#F6F0D8]/60 font-mono text-[10.5px] md:text-[11.5px] font-bold uppercase tracking-[0.1em] border border-[#F6F0D8]/25 hover:border-[#F6F0D8]/50 hover:text-[#F6F0D8] transition-all duration-150 no-underline"
                 >
                   CHECK THE HYPE <span className="text-[15px] leading-none">↗</span>
-                </Link>
-              </motion.div>
-
-              {/* Support Label */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
-                className="mt-5"
-              >
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#E62E78]/40 font-mono text-[10px] md:text-[10.5px] text-[#F6F0D8]/50 tracking-[0.1em] uppercase">
-                  <span className="text-[13px]">🎫</span> NO SIGN-UP · FREE TO CREATE
-                </span>
+                </a>
               </motion.div>
             </div>
 

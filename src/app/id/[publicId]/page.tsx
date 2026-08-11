@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { getBuilderByPublicId, type BuilderData } from '@/lib/storage';
 import { exportIDCard } from '@/lib/canvas-renderer';
-import { EVENT, SHARE_TEXT } from '@/lib/config';
+import { EVENT, SHARE_TEXT, CHECK_HYPE_URL } from '@/lib/config';
 
 /* ================================================================
    DECORATIVE STRIP
@@ -33,6 +33,8 @@ export default function PublicIDPage() {
   const [builderClass, setBuilderClass] = useState('NEURAL NOMAD');
   const [photoUrl, setPhotoUrl] = useState('/builder-solo.png');
   const [builderId, setBuilderId] = useState('HH-26-0241');
+  const [vibe, setVibe] = useState('forest-wave');
+  const [frame, setFrame] = useState('portrait');
 
   // Interaction state
   const [copiedLink, setCopiedLink] = useState(false);
@@ -47,6 +49,8 @@ export default function PublicIDPage() {
       setStack(data.stack);
       setBuilderClass(data.builderClass?.label || 'NEURAL NOMAD');
       setBuilderId(data.publicId);
+      if (data.frameStyle) setVibe(data.frameStyle);
+      if (data.frameFormat) setFrame(data.frameFormat);
       if (data.photoDataUrl) setPhotoUrl(data.photoDataUrl);
     } else if (typeof window !== 'undefined') {
       // Fallback: read from localStorage directly
@@ -65,6 +69,12 @@ export default function PublicIDPage() {
       const savedId = localStorage.getItem('hh_builder_id');
       if (savedId) setBuilderId(savedId);
 
+      const savedPalette = localStorage.getItem('hh_builder_palette');
+      if (savedPalette) setVibe(savedPalette);
+
+      const savedFormat = localStorage.getItem('hh_builder_format');
+      if (savedFormat) setFrame(savedFormat);
+
       if (!savedName && !data) {
         setNotFound(true);
       }
@@ -82,6 +92,8 @@ export default function PublicIDPage() {
           stack,
           builderClass,
           builderId,
+          vibe,
+          frame,
         },
         format
       );
@@ -108,6 +120,13 @@ export default function PublicIDPage() {
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
+
+  // Card Background Style based on Vibe
+  const cardBgClass = vibe.includes('sunburst')
+    ? 'bg-[#C77D0A]'
+    : vibe.includes('sunset')
+    ? 'bg-[#BE123C]'
+    : 'bg-[#163D28]';
 
   // ── NOT FOUND STATE ──
   if (notFound) {
@@ -162,7 +181,7 @@ export default function PublicIDPage() {
                 </div>
 
                 {/* The Credential Card */}
-                <div className="w-full bg-[#163D28] text-[#F6F0D8] border-2 border-[#17251C] rounded-xl p-6 md:p-8 shadow-[8px_8px_0px_#17251C] relative overflow-hidden">
+                <div className={`w-full ${cardBgClass} text-[#F6F0D8] border-2 border-[#17251C] rounded-xl p-6 md:p-8 shadow-[8px_8px_0px_#17251C] relative overflow-hidden transition-colors duration-300`}>
 
                   {/* Top Punch Hole */}
                   <div className="w-10 h-3 rounded-full bg-[#FAF7ED] border border-[#17251C] mx-auto mb-4" />
@@ -379,12 +398,14 @@ export default function PublicIDPage() {
                 >
                   BUILD YOUR OWN →
                 </Link>
-                <Link
-                  href="/radar"
+                <a
+                  href={CHECK_HYPE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="px-6 py-3.5 bg-transparent text-[#F6F0D8] font-mono text-xs font-bold uppercase tracking-wider border-2 border-[#F6F0D8]/40 hover:border-[#F5DD3B] hover:text-[#F5DD3B] transition-all no-underline"
                 >
                   CHECK THE HYPE →
-                </Link>
+                </a>
               </div>
             </div>
 
