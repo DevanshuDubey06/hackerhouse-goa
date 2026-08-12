@@ -440,9 +440,9 @@ function drawCircularStampSeal(
   ctx.stroke();
 
   ctx.fillStyle = colors.primaryText;
-  ctx.font = `800 ${Math.round(radius * 0.25)}px ${FONT_MONO}`;
+  ctx.font = `800 ${Math.round(radius * 0.22)}px ${FONT_MONO}`;
   ctx.textAlign = 'center';
-  ctx.fillText('BUILDER OF', 0, -radius * 0.22);
+  ctx.fillText('HACKER HOUSE', 0, -radius * 0.22);
 
   ctx.fillStyle = colors.secondaryText;
   ctx.font = `900 italic ${Math.round(radius * 0.42)}px ${FONT_DISPLAY}`;
@@ -632,8 +632,8 @@ async function renderPortraitTemplate(
   ctx.strokeRect(32, 32, 1136, 1536);
 
   // Logo Header Left
-  drawCanvasTextWithShadow(ctx, 'HH GOA', 70, 135, `900 68px ${FONT_DISPLAY}`, colors.primaryText);
-  drawCanvasTextWithShadow(ctx, '2026 EDITION', 70, 180, `800 24px ${FONT_MONO}`, colors.secondaryText);
+  drawCanvasTextWithShadow(ctx, 'HH GOA 2026', 70, 135, `900 68px ${FONT_DISPLAY}`, colors.primaryText);
+  drawCanvasTextWithShadow(ctx, 'HACKER HOUSE GOA', 70, 180, `800 24px ${FONT_MONO}`, colors.secondaryText);
 
   // Top Right Circular Stamp
   drawCircularStampSeal(ctx, 1050, 140, 60, colors, -6);
@@ -1192,6 +1192,9 @@ async function renderSlimBadgeTemplate(
   const rX = 560;
   const nameText = (options.name || 'PRIYANSHU KHARE').toUpperCase();
   const stackText = (options.stack || 'PYTHON // NEXT.JS').toUpperCase();
+
+  // Header Subtitle for Slim Badge
+  drawCanvasTextWithShadow(ctx, 'HH GOA 2026 · HACKER HOUSE GOA', rX, 90, `800 22px ${FONT_MONO}`, colors.secondaryText);
 
   ctx.font = `900 62px ${FONT_DISPLAY}`;
   const nameFit = fitCanvasText(ctx, nameText, 800, 62, 26, FONT_DISPLAY, 900);

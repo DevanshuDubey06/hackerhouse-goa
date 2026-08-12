@@ -242,17 +242,12 @@ export function IDCard({
             <span
               className={`font-display text-2.5xl font-black ${currentTheme.accentText} tracking-tighter drop-shadow-sm`}
             >
-              HH
+              HH GOA 2026
             </span>
             <span
-              className={`font-display text-xs font-black ${currentTheme.secondaryText} tracking-widest`}
+              className={`font-mono text-[9.5px] font-extrabold ${currentTheme.secondaryText} tracking-wider mt-0.5`}
             >
-              GOA
-            </span>
-            <span
-              className={`font-mono text-[10px] font-extrabold ${currentTheme.accentText} tracking-wider mt-0.5`}
-            >
-              2026 EDITION
+              HACKER HOUSE GOA
             </span>
           </div>
 
