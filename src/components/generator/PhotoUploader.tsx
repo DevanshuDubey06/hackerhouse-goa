@@ -9,8 +9,16 @@ interface PhotoUploaderProps {
   currentPhoto: string | null;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const SUPPORTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
+const SUPPORTED_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+  'image/heic-sequence',
+];
 
 export function PhotoUploader({
   onPhotoChange,
@@ -18,6 +26,7 @@ export function PhotoUploader({
 }: PhotoUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isProcessingHeic, setIsProcessingHeic] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
@@ -25,17 +34,50 @@ export function PhotoUploader({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFile = useCallback(
-    (file: File) => {
+    async (file: File) => {
       setError(null);
+      const filename = (file.name || '').toLowerCase();
+      const isHeic =
+        file.type.includes('heic') ||
+        file.type.includes('heif') ||
+        filename.endsWith('.heic') ||
+        filename.endsWith('.heif');
 
-      if (!SUPPORTED_TYPES.includes(file.type)) {
-        setError('Unsupported format. Use JPG, PNG, or WEBP.');
+      if (!isHeic && !file.type.startsWith('image/') && !SUPPORTED_TYPES.includes(file.type)) {
+        setError('Unsupported format. Use JPG, PNG, WEBP, or HEIC (iPhone photo).');
         return;
       }
 
       if (file.size > MAX_FILE_SIZE) {
-        setError('Photo too large. Try a file under 10MB.');
+        setError('Photo too large. Try a file under 15MB.');
         return;
+      }
+
+      if (isHeic) {
+        try {
+          setIsProcessingHeic(true);
+          const heic2any = (await import('heic2any')).default;
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.9,
+          });
+
+          const blobToUse = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const result = e.target?.result as string;
+            onPhotoChange(result);
+            setZoom(1);
+            setPosition({ x: 0, y: 0 });
+            setIsProcessingHeic(false);
+          };
+          reader.readAsDataURL(blobToUse);
+          return;
+        } catch (err) {
+          console.warn('[HEIC conversion fallback]:', err);
+          setIsProcessingHeic(false);
+        }
       }
 
       const reader = new FileReader();
@@ -163,14 +205,14 @@ export function PhotoUploader({
               </p>
               <span className="btn-primary text-xs">Upload Photo</span>
               <p className="text-label text-xs text-dark-ink/30 mt-4">
-                JPG, PNG, WEBP &middot; MAX 10MB
+                JPG, PNG, WEBP, HEIC (iPhone) &middot; MAX 15MB
               </p>
             </div>
 
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,image/*"
               onChange={handleFileSelect}
               className="hidden"
               aria-label="Select photo file"

@@ -193,4 +193,4 @@ export const NAV_LINKS = [
 ] as const;
 
 export const SHARE_TEXT = (builderClass: string, builderId: string) =>
-  `I just created my Hacker House Goa Builder ID.\n\n${builderClass}\nID: ${builderId}\n\n${EVENT.hashtag}\n\nApply for Hacker House Goa 2026: ${OFFICIAL_APPLY_URL}`;
+  `Just minted my official Hacker House Goa 2026 Builder ID! 🌊⚡\n\nClass: ${builderClass}\nID: ${builderId}\n\nBuild your Builder ID & join 500 builders in Goa! 🚀\n#HackerHouseGoa #HHGoa2026`;

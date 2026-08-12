@@ -95,7 +95,7 @@ export default function GenerateStepPage() {
   // Share to X Handler
   const handleShareToX = () => {
     const text = SHARE_TEXT(builderClass, builderId);
-    const publicUrl = `${window.location.origin}/id/${builderId}`;
+    const publicUrl = `${window.location.origin}/id/${builderId}?name=${encodeURIComponent(name)}&stack=${encodeURIComponent(stack)}&builderClass=${encodeURIComponent(builderClass)}&vibe=${encodeURIComponent(vibe)}&frame=${encodeURIComponent(frame)}`;
     const intentUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(publicUrl)}`;
     window.open(intentUrl, '_blank', 'noopener,noreferrer');
   };

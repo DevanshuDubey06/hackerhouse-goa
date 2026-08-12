@@ -158,7 +158,7 @@ export default function PublicIDPage() {
   // Share to X
   const handleShareToX = () => {
     const text = SHARE_TEXT(builderClass, builderId);
-    const publicUrl = `${window.location.origin}/id/${builderId}`;
+    const publicUrl = `${window.location.origin}/id/${builderId}?name=${encodeURIComponent(name)}&stack=${encodeURIComponent(stack)}&builderClass=${encodeURIComponent(builderClass)}&vibe=${encodeURIComponent(vibe)}&frame=${encodeURIComponent(frame)}`;
     window.open(
       `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(publicUrl)}`,
       '_blank',
