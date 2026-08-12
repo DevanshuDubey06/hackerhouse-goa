@@ -189,17 +189,7 @@ export function Hero() {
                 </a>
               </motion.div>
 
-              {/* Free Badge */}
-              <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.35 }}
-                className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded bg-[#E62E78]/10 border border-[#E62E78]/40"
-              >
-                <span className="font-mono text-[10px] text-[#E62E78] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="text-[12px]">🎴</span> NO SIGN-UP · FREE TO CREATE
-                </span>
-              </motion.div>
+
             </div>
           </div>
         </div>
@@ -265,10 +255,12 @@ export function Hero() {
 
       {/* ─── Decorative Goan Pattern Strip ─── */}
       <div
-        className="w-full h-[22px] bg-repeat-x"
+        className="h-[22px] bg-repeat-x"
         style={{
           backgroundImage: STRIP_PATTERN,
           backgroundSize: '60px 22px',
+          width: '100vw',
+          marginLeft: 'calc(-50vw + 50%)',
         }}
         aria-hidden="true"
       />
