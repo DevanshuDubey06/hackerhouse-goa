@@ -10,6 +10,11 @@ import { EVENT } from '@/lib/config';
    PALETTES DATA
    ================================================================ */
 
+const normalizePaletteId = (value: string | null) => {
+  const key = (value || 'forest-wave').toLowerCase().trim();
+  return key.includes('sunburest') ? 'sunburst' : key;
+};
+
 const PALETTES = [
   {
     id: 'forest-wave',
@@ -22,10 +27,10 @@ const PALETTES = [
   {
     id: 'sunburst',
     name: 'SUNBURST',
-    description: 'Bright. Loud. Builder energy.',
-    image: '/sunburst.png',
-    bgColor: '#D4BE1F',
-    accentColor: '#17251C',
+    description: 'Warm golden sunset. High-contrast builder energy.',
+    image: '/builder-solo.png',
+    bgColor: '#3B1306',
+    accentColor: '#FFD700',
   },
   {
     id: 'sunset-pink',
@@ -67,7 +72,7 @@ export default function PersonalizeStepPage() {
       const savedPhoto = localStorage.getItem('hh_builder_photo');
       if (savedPhoto) setPhotoUrl(savedPhoto);
 
-      const savedPalette = localStorage.getItem('hh_builder_palette');
+      const savedPalette = normalizePaletteId(localStorage.getItem('hh_builder_palette'));
       if (savedPalette) setSelectedPalette(savedPalette);
     }
   }, []);
@@ -118,7 +123,7 @@ export default function PersonalizeStepPage() {
   // Proceed to Step 04: Frame Selection
   const handleProceedNext = () => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('hh_builder_palette', selectedPalette);
+      localStorage.setItem('hh_builder_palette', normalizePaletteId(selectedPalette));
       localStorage.setItem('hh_builder_zoom', zoom.toString());
       localStorage.setItem('hh_builder_pan', JSON.stringify(pan));
     }
@@ -347,9 +352,10 @@ export default function PersonalizeStepPage() {
                       <div
                         key={palette.id}
                         onClick={() => {
-                          setSelectedPalette(palette.id);
+                          const nextPalette = normalizePaletteId(palette.id);
+                          setSelectedPalette(nextPalette);
                           if (typeof window !== 'undefined') {
-                            localStorage.setItem('hh_builder_palette', palette.id);
+                            localStorage.setItem('hh_builder_palette', nextPalette);
                           }
                         }}
                         className={`bg-[#0F2E1D] border-2 rounded-md p-3 cursor-pointer transition-all flex flex-col justify-between ${

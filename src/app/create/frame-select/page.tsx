@@ -6,6 +6,11 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { renderIDCard } from '@/lib/canvas-renderer';
 
+const normalizePaletteId = (value: string | null) => {
+  const key = (value || 'forest-wave').toLowerCase().trim();
+  return key.includes('sunburest') ? 'sunburst' : key;
+};
+
 /* ================================================================
    FRAME FORMATS LIST
    ================================================================ */
@@ -17,6 +22,7 @@ const FRAME_FORMATS = [
     title: 'PORTRAIT',
     subtitle: 'YOUR BUILDER ID',
     description: 'Best for profile posts.',
+    ratio: '4:5',
   },
   {
     id: 'landscape',
@@ -24,27 +30,47 @@ const FRAME_FORMATS = [
     title: 'LANDSCAPE',
     subtitle: 'SHOW YOUR BUILD',
     description: 'Perfect for X / social posts.',
+    ratio: '16:10',
+  },
+  {
+    id: 'square',
+    number: '03',
+    title: 'SQUARE',
+    subtitle: 'BALANCED & CLEAN',
+    description: 'Great for feeds and previews.',
+    ratio: '1:1',
+  },
+  {
+    id: 'story',
+    number: '04',
+    title: 'STORY',
+    subtitle: 'FULL-HEIGHT IMPACT',
+    description: 'Built for reels and stories.',
+    ratio: '9:16',
   },
   {
     id: 'circle',
-    number: '03',
+    number: '05',
     title: 'CIRCLE PFP',
     subtitle: 'YOUR NEW AVATAR',
     description: 'Made for profile pictures.',
+    ratio: '1:1',
   },
   {
     id: 'arch',
-    number: '04',
+    number: '06',
     title: 'ARCH BADGE',
     subtitle: 'OFFICIAL BUILDER ENERGY',
     description: 'Official builder credential.',
+    ratio: '4:5',
   },
   {
     id: 'slim',
-    number: '05',
+    number: '07',
     title: 'SLIM BADGE',
     subtitle: 'SMALL FORMAT. BIG FLEX.',
     description: 'Compact builder flex.',
+    ratio: '8:3',
   },
 ];
 
@@ -95,7 +121,7 @@ export default function FrameSelectPage() {
       const savedPhoto = localStorage.getItem('hh_builder_photo');
       if (savedPhoto) setPhotoUrl(savedPhoto);
 
-      const savedPalette = localStorage.getItem('hh_builder_palette');
+      const savedPalette = normalizePaletteId(localStorage.getItem('hh_builder_palette'));
       if (savedPalette) setVibe(savedPalette);
     }
   }, []);
@@ -104,7 +130,7 @@ export default function FrameSelectPage() {
   useEffect(() => {
     const loadPreviews = async () => {
       const results: Record<string, string> = {};
-      const formats = ['portrait', 'landscape', 'circle', 'arch', 'slim'];
+      const formats = ['portrait', 'landscape', 'square', 'story', 'circle', 'arch', 'slim'];
       for (const f of formats) {
         results[f] = await renderIDCard({
           photo: photoUrl,
@@ -236,8 +262,8 @@ export default function FrameSelectPage() {
               </div>
             )}
 
-            {/* ─── 5 FORMAT CARDS GALLERY ─── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 items-stretch mb-10">
+            {/* ─── FORMAT CARDS GALLERY ─── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4 items-stretch mb-10">
 
               {FRAME_FORMATS.map((fmt) => {
                 const isSelected = selectedFormat === fmt.id;

@@ -170,7 +170,7 @@ export const BUILDER_CLASSES = [
 
 export const FRAME_STYLES = [
   { id: 'monsoon', label: 'MONSOON', color: '#1E5B3A', bg: '#1E5B3A' },
-  { id: 'sunburst', label: 'SUNBURST', color: '#f5a623', bg: '#c77d0a' },
+  { id: 'sunburst', label: 'SUNBURST', color: '#FFD700', bg: '#3B1306' },
   { id: 'night', label: 'NIGHT', color: '#1a1a2e', bg: '#1a1a2e' },
   { id: 'sea', label: 'SEA', color: '#1e6091', bg: '#1e6091' },
 ] as const;

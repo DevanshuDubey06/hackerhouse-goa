@@ -40,7 +40,8 @@ export function getCurrentBuilderOptions(): RenderOptions {
   const stack = localStorage.getItem('hh_builder_stack') || 'PYTHON // NEXT.JS';
   const builderClass = localStorage.getItem('hh_builder_class') || 'DATA DRIFTER';
   const photo = localStorage.getItem('hh_builder_photo') || '/builder-solo.png';
-  const vibe = localStorage.getItem('hh_builder_palette') || 'forest-wave';
+  const savedVibe = localStorage.getItem('hh_builder_palette');
+  const vibe = normalizeVibeKey(savedVibe || 'forest-wave');
   const frame = localStorage.getItem('hh_builder_format') || 'portrait';
 
   let builderId = localStorage.getItem('hh_builder_id');
@@ -79,18 +80,23 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
   });
 }
 
+function normalizeVibeKey(vibe: string | undefined): string {
+  const key = (vibe || 'forest-wave').toLowerCase().trim();
+  return key.includes('sunburest') ? key.replace(/sunburest/g, 'sunburst') : key;
+}
+
 function getVibeColors(vibe: string = 'forest-wave') {
-  const v = (vibe || 'forest-wave').toLowerCase();
+  const v = normalizeVibeKey(vibe);
   if (v.includes('sunburst')) {
     return {
-      bg: '#C77D0A',
-      borderOuter: '#5C2800',
-      borderInner: '#FDE047',
-      primaryText: '#FDE047',
-      secondaryText: '#FFFBEB',
-      stampBg: '#A16207',
-      stampText: '#FDE047',
-      photoBoxBg: '#7C2D12',
+      bg: '#3B1306',
+      borderOuter: '#1A0802',
+      borderInner: '#FFD700',
+      primaryText: '#FFE566',
+      secondaryText: '#FFF5D6',
+      stampBg: '#2A0B03',
+      stampText: '#FFD700',
+      photoBoxBg: '#1C0802',
     };
   }
   if (v.includes('sunset')) {
@@ -230,7 +236,7 @@ function drawVibeBackground(
   vibe: string,
   colors: ReturnType<typeof getVibeColors>
 ) {
-  const v = (vibe || 'forest-wave').toLowerCase();
+  const v = normalizeVibeKey(vibe);
 
   // 1. FOREST WAVE: Deep Goa Forest Green + Waves + Palms + Sailboat
   if (v.includes('forest')) {
@@ -246,16 +252,16 @@ function drawVibeBackground(
     return;
   }
 
-  // 2. SUNBURST: Warm Golden Sunset + Sun Disk + Rays + Palms + Sailboat
+  // 2. SUNBURST: Warm Golden Sunset + Sun Disk + Rays + Palms + Sailboat (High Text Contrast)
   if (v.includes('sunburst')) {
     const grad = ctx.createLinearGradient(0, 0, width, height);
-    grad.addColorStop(0, '#EA580C');
-    grad.addColorStop(0.5, '#C77D0A');
-    grad.addColorStop(1, '#92400E');
+    grad.addColorStop(0, '#3B1306');
+    grad.addColorStop(0.5, '#6E2208');
+    grad.addColorStop(1, '#210A03');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
-    // 24 Radiating Golden Sunburst Rays
+    // 24 Radiating Golden Sunburst Rays on dark mahogany
     const centerX = width / 2;
     const centerY = height * 0.35;
     const rayCount = 24;
@@ -265,7 +271,7 @@ function drawVibeBackground(
       const startAngle = i * angleStep;
       const endAngle = (i + 1) * angleStep;
 
-      ctx.fillStyle = i % 4 === 0 ? 'rgba(254, 240, 138, 0.28)' : 'rgba(253, 224, 71, 0.14)';
+      ctx.fillStyle = i % 4 === 0 ? 'rgba(255, 215, 0, 0.16)' : 'rgba(255, 180, 0, 0.08)';
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
       ctx.arc(centerX, centerY, Math.max(width, height) * 1.5, startAngle, endAngle);
@@ -275,18 +281,18 @@ function drawVibeBackground(
 
     // Sun Disk Glow
     const sunGrad = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, 300);
-    sunGrad.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
-    sunGrad.addColorStop(1, 'rgba(199, 125, 10, 0)');
+    sunGrad.addColorStop(0, 'rgba(255, 215, 0, 0.28)');
+    sunGrad.addColorStop(1, 'rgba(59, 19, 6, 0)');
     ctx.fillStyle = sunGrad;
     ctx.beginPath();
     ctx.arc(centerX, centerY, 300, 0, Math.PI * 2);
     ctx.fill();
 
-    drawGoaOceanBeachScene(ctx, width, height, '#7C2D12', 'rgba(253, 224, 71, 0.6)');
+    drawGoaOceanBeachScene(ctx, width, height, '#1C0802', 'rgba(255, 215, 0, 0.65)');
 
     // Goan Palm Trees Silhouettes
-    drawPalmTreeArt(ctx, 70, height, 1.2, 'rgba(92, 40, 14, 0.65)');
-    drawPalmTreeArt(ctx, width - 100, height, 1.3, 'rgba(92, 40, 14, 0.65)');
+    drawPalmTreeArt(ctx, 70, height, 1.2, 'rgba(26, 8, 2, 0.7)');
+    drawPalmTreeArt(ctx, width - 100, height, 1.3, 'rgba(26, 8, 2, 0.7)');
     drawVintagePrintTexture(ctx, width, height);
     return;
   }
@@ -338,6 +344,9 @@ function drawVibeBackground(
   drawVintagePrintTexture(ctx, width, height);
 }
 
+const FONT_DISPLAY = '"Bodoni Moda", "Syne", "Space Grotesk", Georgia, serif';
+const FONT_MONO = '"IBM Plex Mono", "JetBrains Mono", "SFMono-Regular", Consolas, monospace';
+
 /**
  * Draws Builder ID Pill Badge
  */
@@ -348,21 +357,207 @@ function drawBuilderIdPill(
   y: number,
   w: number,
   h: number,
-  colors: ReturnType<typeof getVibeColors>
+  colors: ReturnType<typeof getVibeColors>,
+  align: CanvasTextAlign = 'left'
 ) {
   ctx.save();
+  const drawX = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
+
   ctx.fillStyle = colors.photoBoxBg;
-  ctx.fillRect(x, y, w, h);
+  ctx.fillRect(drawX, y, w, h);
   ctx.strokeStyle = colors.borderInner;
   ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, w, h);
+  ctx.strokeRect(drawX, y, w, h);
+
+  const safeText = (idText || 'HH-26-7407').toUpperCase();
+  ctx.fillStyle = colors.primaryText;
+  ctx.font = `900 22px ${FONT_MONO}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(safeText, drawX + w / 2, y + h / 2 + 7);
+  ctx.restore();
+}
+
+/**
+ * Draws Builder Class Pill Badge
+ */
+function drawClassBadgePill(
+  ctx: CanvasRenderingContext2D,
+  classText: string,
+  x: number,
+  y: number,
+  h: number,
+  colors: ReturnType<typeof getVibeColors>,
+  align: CanvasTextAlign = 'left'
+) {
+  ctx.save();
+  const text = `BUILDER ⚡ ${(classText || 'DATA DRIFTER').toUpperCase()}`;
+  ctx.font = `700 22px ${FONT_MONO}`;
+  const textWidth = ctx.measureText(text).width;
+  const paddingX = 22;
+  const w = textWidth + paddingX * 2;
+  const drawX = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
+
+  ctx.fillStyle = colors.stampBg;
+  ctx.fillRect(drawX, y, w, h);
+
+  ctx.strokeStyle = colors.borderInner;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(drawX, y, w, h);
 
   ctx.fillStyle = colors.primaryText;
-  ctx.font = '800 28px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText(idText, x + w / 2, y + h / 2 + 9);
   ctx.textAlign = 'left';
+  ctx.fillText(text, drawX + paddingX, y + h / 2 + 7);
   ctx.restore();
+}
+
+/**
+ * Draws Circular Stamp Seal
+ */
+function drawCircularStampSeal(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  colors: ReturnType<typeof getVibeColors>,
+  rotation = 6
+) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate((rotation * Math.PI) / 180);
+
+  ctx.fillStyle = colors.stampBg;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = colors.borderInner;
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(0, 0, radius - 6, 0, Math.PI * 2);
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.fillStyle = colors.primaryText;
+  ctx.font = `800 ${Math.round(radius * 0.25)}px ${FONT_MONO}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('BUILDER OF', 0, -radius * 0.22);
+
+  ctx.fillStyle = colors.secondaryText;
+  ctx.font = `900 italic ${Math.round(radius * 0.42)}px ${FONT_DISPLAY}`;
+  ctx.fillText('GOA 2026', 0, radius * 0.32);
+
+  ctx.restore();
+}
+
+/**
+ * Draws canvas text with crisp drop shadow
+ */
+function drawCanvasTextWithShadow(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  font: string,
+  color: string,
+  align: CanvasTextAlign = 'left',
+  shadowColor = 'rgba(0, 0, 0, 0.45)',
+  shadowBlur = 8,
+  shadowOffsetY = 4
+) {
+  ctx.save();
+  ctx.font = font;
+  ctx.textAlign = align;
+  ctx.shadowColor = shadowColor;
+  ctx.shadowBlur = shadowBlur;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = shadowOffsetY;
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function fitCanvasText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  baseSize: number,
+  minSize: number,
+  family: string,
+  weight: number,
+  allowBreaks = false
+): { text: string; size: number } {
+  const normalized = (text || '').toUpperCase();
+  if (!normalized) return { text: '', size: baseSize };
+
+  let size = baseSize;
+  let displayText = normalized;
+  ctx.font = `${weight} ${size}px ${family}`;
+
+  while (size > minSize && ctx.measureText(displayText).width > maxWidth) {
+    size -= 2;
+    ctx.font = `${weight} ${size}px ${family}`;
+
+    if (allowBreaks && displayText.length > 18) {
+      const words = normalized.split(' ');
+      if (words.length > 1) {
+        const line = words.slice(0, Math.max(1, words.length - 1)).join(' ');
+        if (ctx.measureText(line).width <= maxWidth) {
+          displayText = line;
+        }
+      }
+    }
+  }
+
+  return { text: displayText, size };
+}
+
+function drawFlexibleText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  baseSize: number,
+  minSize: number,
+  family: string,
+  weight: number,
+  lineHeight: number,
+  align: CanvasTextAlign = 'left'
+): void {
+  const words = (text || '').trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return;
+
+  ctx.textAlign = align;
+  const lines: string[] = [];
+  let current = words[0];
+
+  for (let i = 1; i < words.length; i++) {
+    const candidate = `${current} ${words[i]}`;
+    ctx.font = `${weight} ${baseSize}px ${family}`;
+    if (ctx.measureText(candidate).width <= maxWidth) {
+      current = candidate;
+    } else {
+      lines.push(current);
+      current = words[i];
+    }
+  }
+  lines.push(current);
+
+  const finalLines = lines.slice(0, 3).map((line) => line.toUpperCase());
+  const startY = y - ((finalLines.length - 1) * lineHeight) / 2;
+
+  finalLines.forEach((line, index) => {
+    let lineSize = baseSize;
+    ctx.font = `${weight} ${lineSize}px ${family}`;
+    while (lineSize > minSize && ctx.measureText(line).width > maxWidth) {
+      lineSize -= 2;
+      ctx.font = `${weight} ${lineSize}px ${family}`;
+    }
+    const px = align === 'center' ? x : x;
+    ctx.fillText(line, px, startY + index * lineHeight + lineHeight * 0.8);
+  });
 }
 
 async function validateImageBinary(
@@ -412,7 +607,7 @@ async function validateImageBinary(
 
 /**
  * -------------------------------------------------------------
- * TEMPLATE 01: PORTRAIT (1200 x 1600) — Matching Reference Matrix
+ * TEMPLATE 01: PORTRAIT (1200 x 1600)
  * -------------------------------------------------------------
  */
 async function renderPortraitTemplate(
@@ -437,44 +632,26 @@ async function renderPortraitTemplate(
   ctx.strokeRect(32, 32, 1136, 1536);
 
   // Logo Header Left
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 76px serif';
-  ctx.fillText('HH', 70, 145);
+  drawCanvasTextWithShadow(ctx, 'HH GOA', 70, 135, `900 68px ${FONT_DISPLAY}`, colors.primaryText);
+  drawCanvasTextWithShadow(ctx, '2026 EDITION', 70, 180, `800 24px ${FONT_MONO}`, colors.secondaryText);
 
-  ctx.fillStyle = colors.secondaryText;
-  ctx.font = '900 44px serif';
-  ctx.fillText('GOA', 70, 205);
-
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '700 28px monospace';
-  ctx.fillText('2026', 70, 245);
-
-  // Circular Stamp Top Right
-  const topStampX = 1060;
-  const topStampY = 150;
-  ctx.fillStyle = colors.primaryText;
-  ctx.beginPath();
-  ctx.arc(topStampX, topStampY, 55, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = colors.stampBg;
-  ctx.font = '800 16px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('BUILDER', topStampX, topStampY - 6);
-  ctx.font = '900 italic 22px serif';
-  ctx.fillText('GOA 2026', topStampX, topStampY + 18);
-  ctx.textAlign = 'left';
+  // Top Right Circular Stamp
+  drawCircularStampSeal(ctx, 1050, 140, 60, colors, -6);
 
   // Photo Frame Box
-  const photoSize = 740;
+  const photoSize = 760;
   const photoX = (1200 - photoSize) / 2;
-  const photoY = 270;
+  const photoY = 240;
 
   ctx.fillStyle = colors.photoBoxBg;
   ctx.fillRect(photoX, photoY, photoSize, photoSize);
   ctx.strokeStyle = colors.borderOuter;
   ctx.lineWidth = 8;
   ctx.strokeRect(photoX, photoY, photoSize, photoSize);
+
+  ctx.strokeStyle = colors.borderInner;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(photoX + 6, photoY + 6, photoSize - 12, photoSize - 12);
 
   const imgObj = options.photo ? await loadImage(options.photo) : null;
   if (imgObj) {
@@ -496,22 +673,26 @@ async function renderPortraitTemplate(
     ctx.restore();
   }
 
-  // Name & Details
-  const infoY = photoY + photoSize + 85;
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 64px serif';
-  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), 70, infoY);
+  // Details
+  const infoY = photoY + photoSize + 90;
+  const nameText = (options.name || 'PRIYANSHU KHARE').toUpperCase();
+  const stackText = (options.stack || 'PYTHON // NEXT.JS').toUpperCase();
 
-  ctx.fillStyle = colors.secondaryText;
-  ctx.font = '700 28px monospace';
-  ctx.fillText(`BUILDER ⚡ ${(options.builderClass || 'DATA DRIFTER').toUpperCase()}`, 70, infoY + 55);
+  // Name Title
+  ctx.font = `900 68px ${FONT_DISPLAY}`;
+  const nameFit = fitCanvasText(ctx, nameText, 1060, 68, 38, FONT_DISPLAY, 900);
+  drawCanvasTextWithShadow(ctx, nameFit.text, 70, infoY, `900 ${nameFit.size}px ${FONT_DISPLAY}`, colors.primaryText);
 
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '600 26px monospace';
-  ctx.fillText((options.stack || 'PYTHON // NEXT.JS').toUpperCase(), 70, infoY + 105);
+  // Builder Class Badge Pill
+  drawClassBadgePill(ctx, options.builderClass || 'DATA DRIFTER', 70, infoY + 25, 48, colors);
+
+  // Stack Tech Text
+  ctx.font = `600 24px ${FONT_MONO}`;
+  const stackFit = fitCanvasText(ctx, stackText, 1020, 24, 15, FONT_MONO, 600);
+  drawCanvasTextWithShadow(ctx, stackFit.text, 70, infoY + 115, `600 ${stackFit.size}px ${FONT_MONO}`, colors.secondaryText);
 
   // Builder ID Pill Badge
-  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', 70, infoY + 130, 260, 50, colors);
+  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', 70, infoY + 145, 280, 52, colors);
 
   // Barcode Bottom
   const bottomY = 1530;
@@ -526,7 +707,7 @@ async function renderPortraitTemplate(
 
 /**
  * -------------------------------------------------------------
- * TEMPLATE 02: LANDSCAPE (1600 x 1000) — Matching Reference Matrix
+ * TEMPLATE 02: LANDSCAPE (1600 x 1000)
  * -------------------------------------------------------------
  */
 async function renderLandscapeTemplate(
@@ -541,6 +722,7 @@ async function renderLandscapeTemplate(
 
   drawVibeBackground(ctx, 1600, 1000, vibeKey, colors);
 
+  // Outer & Inner Borders
   ctx.strokeStyle = colors.borderOuter;
   ctx.lineWidth = 16;
   ctx.strokeRect(8, 8, 1584, 984);
@@ -550,20 +732,35 @@ async function renderLandscapeTemplate(
   ctx.strokeRect(28, 28, 1544, 944);
 
   // Top Left Header
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 48px serif';
-  ctx.fillText('HH GOA 2026', 80, 120);
+  drawCanvasTextWithShadow(ctx, 'HH GOA 2026', 80, 110, `900 48px ${FONT_DISPLAY}`, colors.primaryText);
+
+  // Top Right Official Pass Badge
+  ctx.fillStyle = colors.borderInner;
+  ctx.fillRect(1240, 70, 280, 40);
+  ctx.strokeStyle = colors.borderOuter;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1240, 70, 280, 40);
+
+  ctx.fillStyle = colors.stampBg;
+  ctx.font = `800 15px ${FONT_MONO}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('OFFICIAL BUILDER PASS', 1380, 96);
+  ctx.textAlign = 'left';
 
   // Photo Box Left
-  const pSize = 560;
+  const pSize = 620;
   const pX = 80;
-  const pY = 150;
+  const pY = 140;
 
   ctx.fillStyle = colors.photoBoxBg;
   ctx.fillRect(pX, pY, pSize, pSize);
   ctx.strokeStyle = colors.borderOuter;
-  ctx.lineWidth = 6;
+  ctx.lineWidth = 8;
   ctx.strokeRect(pX, pY, pSize, pSize);
+
+  ctx.strokeStyle = colors.borderInner;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(pX + 6, pY + 6, pSize - 12, pSize - 12);
 
   const imgObj = options.photo ? await loadImage(options.photo) : null;
   if (imgObj) {
@@ -571,71 +768,226 @@ async function renderLandscapeTemplate(
     ctx.beginPath();
     ctx.rect(pX, pY, pSize, pSize);
     ctx.clip();
-    ctx.drawImage(imgObj, pX, pY, pSize, pSize);
+    const scale = options.zoom || 1;
+    const posX = options.position?.x || 0;
+    const posY = options.position?.y || 0;
+    const drawW = pSize * scale;
+    const drawH = pSize * scale;
+    const drawX = pX + (pSize - drawW) / 2 + posX * (pSize / 300);
+    const drawY = pY + (pSize - drawH) / 2 + posY * (pSize / 300);
+    ctx.drawImage(imgObj, drawX, drawY, drawW, drawH);
     ctx.restore();
   }
 
-  // Right Column Info
-  const rX = 700;
+  // Right Column Info Panel
+  const rX = 750;
+  const nameText = (options.name || 'PRIYANSHU KHARE').toUpperCase();
+  const stackText = (options.stack || 'PYTHON // NEXT.JS').toUpperCase();
 
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 66px serif';
-  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), rX, 230);
+  // Name Title
+  ctx.font = `900 66px ${FONT_DISPLAY}`;
+  const nameFit = fitCanvasText(ctx, nameText, 760, 66, 32, FONT_DISPLAY, 900);
+  drawCanvasTextWithShadow(ctx, nameFit.text, rX, 230, `900 ${nameFit.size}px ${FONT_DISPLAY}`, colors.primaryText);
 
-  ctx.fillStyle = colors.secondaryText;
-  ctx.font = '700 28px monospace';
-  ctx.fillText(`BUILDER ⚡ ${(options.builderClass || 'DATA DRIFTER').toUpperCase()}`, rX, 300);
+  // Builder Class Badge Pill
+  drawClassBadgePill(ctx, options.builderClass || 'DATA DRIFTER', rX, 280, 52, colors);
 
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '600 26px monospace';
-  ctx.fillText((options.stack || 'PYTHON // NEXT.JS').toUpperCase(), rX, 360);
+  // Stack Tech Text
+  ctx.font = `600 24px ${FONT_MONO}`;
+  const stackFit = fitCanvasText(ctx, stackText, 720, 24, 15, FONT_MONO, 600);
+  drawCanvasTextWithShadow(ctx, stackFit.text, rX, 385, `600 ${stackFit.size}px ${FONT_MONO}`, colors.secondaryText);
 
-  // Builder ID Pill Badge
-  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', rX, 395, 260, 50, colors);
+  // Builder ID Badge Pill
+  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', rX, 425, 280, 54, colors);
 
-  // Right Circular Stamp
-  const stampX = 1320;
-  const stampY = 470;
-  ctx.strokeStyle = colors.borderInner;
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.arc(stampX, stampY, 75, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '800 18px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('BUILDER OF', stampX, stampY - 15);
-  ctx.font = '900 italic 30px serif';
-  ctx.fillStyle = colors.secondaryText;
-  ctx.fillText('GOA 2026', stampX, stampY + 22);
-  ctx.textAlign = 'left';
+  // Circular Stamp Seal (Positioned beside ID Pill in Right Panel)
+  drawCircularStampSeal(ctx, 1370, 440, 72, colors, 8);
 
   // Bottom Footer Bar
-  const bY = 850;
+  const bY = 800;
   ctx.strokeStyle = colors.borderInner;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(80, bY);
   ctx.lineTo(1520, bY);
   ctx.stroke();
 
-  ctx.fillStyle = colors.secondaryText;
-  ctx.font = '700 24px monospace';
-  ctx.fillText('GOA, INDIA · 28—31 OCT 2026', 80, bY + 55);
+  drawCanvasTextWithShadow(
+    ctx,
+    'GOA, INDIA · 28—31 OCT 2026 · 4 DAYS · 500 BUILDERS',
+    80,
+    bY + 58,
+    `700 24px ${FONT_MONO}`,
+    colors.secondaryText
+  );
 
   let bx = 1180;
-  const bars = [4, 2, 6, 2, 4, 8, 2, 4, 2, 6, 4, 2, 8, 2, 4, 6];
+  const bars = [4, 2, 6, 2, 4, 8, 2, 4, 2, 6, 4, 2, 8, 2, 4, 6, 4, 2, 8];
   ctx.fillStyle = colors.secondaryText;
   for (const b of bars) {
-    ctx.fillRect(bx, bY + 20, b, 45);
+    ctx.fillRect(bx, bY + 25, b, 48);
     bx += b + 4;
   }
 }
 
 /**
  * -------------------------------------------------------------
- * TEMPLATE 03: CIRCLE PFP (1200 x 1200 Circular Clipped Profile)
+ * TEMPLATE 03A: SQUARE CARD (1200 x 1200)
+ * -------------------------------------------------------------
+ */
+async function renderSquareTemplate(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  options: RenderOptions,
+  vibeKey: string,
+  colors: ReturnType<typeof getVibeColors>
+) {
+  canvas.width = 1200;
+  canvas.height = 1200;
+
+  drawVibeBackground(ctx, 1200, 1200, vibeKey, colors);
+
+  ctx.strokeStyle = colors.borderOuter;
+  ctx.lineWidth = 16;
+  ctx.strokeRect(8, 8, 1184, 1184);
+
+  ctx.strokeStyle = colors.borderInner;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(28, 28, 1144, 1144);
+
+  // Header Title
+  drawCanvasTextWithShadow(ctx, 'HH GOA 2026', 80, 110, `900 44px ${FONT_DISPLAY}`, colors.primaryText);
+
+  // Top Right Stamp
+  drawCircularStampSeal(ctx, 1050, 140, 58, colors, -6);
+
+  const nameText = (options.name || 'PRIYANSHU KHARE').toUpperCase();
+  const stackText = (options.stack || 'PYTHON // NEXT.JS').toUpperCase();
+
+  const photoSize = 600;
+  const photoX = (1200 - photoSize) / 2;
+  const photoY = 150;
+
+  ctx.fillStyle = colors.photoBoxBg;
+  ctx.fillRect(photoX, photoY, photoSize, photoSize);
+  ctx.strokeStyle = colors.borderOuter;
+  ctx.lineWidth = 8;
+  ctx.strokeRect(photoX, photoY, photoSize, photoSize);
+
+  ctx.strokeStyle = colors.borderInner;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(photoX + 6, photoY + 6, photoSize - 12, photoSize - 12);
+
+  const imgObj = options.photo ? await loadImage(options.photo) : null;
+  if (imgObj) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(photoX, photoY, photoSize, photoSize);
+    ctx.clip();
+    ctx.drawImage(imgObj, photoX, photoY, photoSize, photoSize);
+    ctx.restore();
+  }
+
+  // Info Section
+  const infoY = photoY + photoSize + 75;
+
+  ctx.font = `900 58px ${FONT_DISPLAY}`;
+  const nameFit = fitCanvasText(ctx, nameText, 1040, 58, 28, FONT_DISPLAY, 900);
+  drawCanvasTextWithShadow(ctx, nameFit.text, 80, infoY, `900 ${nameFit.size}px ${FONT_DISPLAY}`, colors.primaryText);
+
+  drawClassBadgePill(ctx, options.builderClass || 'DATA DRIFTER', 80, infoY + 20, 48, colors);
+
+  ctx.font = `600 22px ${FONT_MONO}`;
+  const stackFit = fitCanvasText(ctx, stackText, 1000, 22, 14, FONT_MONO, 600);
+  drawCanvasTextWithShadow(ctx, stackFit.text, 80, infoY + 105, `600 ${stackFit.size}px ${FONT_MONO}`, colors.secondaryText);
+
+  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', 80, infoY + 135, 270, 50, colors);
+}
+
+/**
+ * -------------------------------------------------------------
+ * TEMPLATE 03B: STORY / FULL-HEIGHT CARD (1080 x 1920)
+ * -------------------------------------------------------------
+ */
+async function renderStoryTemplate(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  options: RenderOptions,
+  vibeKey: string,
+  colors: ReturnType<typeof getVibeColors>
+) {
+  canvas.width = 1080;
+  canvas.height = 1920;
+
+  drawVibeBackground(ctx, 1080, 1920, vibeKey, colors);
+
+  ctx.strokeStyle = colors.borderOuter;
+  ctx.lineWidth = 16;
+  ctx.strokeRect(10, 10, 1060, 1900);
+
+  ctx.strokeStyle = colors.borderInner;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(36, 36, 1008, 1848);
+
+  drawCanvasTextWithShadow(ctx, 'HH GOA 2026', 80, 140, `900 68px ${FONT_DISPLAY}`, colors.primaryText);
+  drawCanvasTextWithShadow(ctx, 'OFFICIAL BUILDER PASS', 80, 190, `800 24px ${FONT_MONO}`, colors.secondaryText);
+
+  const photoSize = 760;
+  const photoX = (1080 - photoSize) / 2;
+  const photoY = 260;
+
+  ctx.fillStyle = colors.photoBoxBg;
+  ctx.fillRect(photoX, photoY, photoSize, photoSize);
+  ctx.strokeStyle = colors.borderOuter;
+  ctx.lineWidth = 8;
+  ctx.strokeRect(photoX, photoY, photoSize, photoSize);
+
+  ctx.strokeStyle = colors.borderInner;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(photoX + 6, photoY + 6, photoSize - 12, photoSize - 12);
+
+  const imgObj = options.photo ? await loadImage(options.photo) : null;
+  if (imgObj) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(photoX, photoY, photoSize, photoSize);
+    ctx.clip();
+    ctx.drawImage(imgObj, photoX, photoY, photoSize, photoSize);
+    ctx.restore();
+  }
+
+  const nameText = (options.name || 'PRIYANSHU KHARE').toUpperCase();
+  const stackText = (options.stack || 'PYTHON // NEXT.JS').toUpperCase();
+
+  const infoY = photoY + photoSize + 90;
+
+  ctx.font = `900 68px ${FONT_DISPLAY}`;
+  const nameFit = fitCanvasText(ctx, nameText, 920, 68, 32, FONT_DISPLAY, 900);
+  drawCanvasTextWithShadow(ctx, nameFit.text, 80, infoY, `900 ${nameFit.size}px ${FONT_DISPLAY}`, colors.primaryText);
+
+  drawClassBadgePill(ctx, options.builderClass || 'DATA DRIFTER', 80, infoY + 25, 52, colors);
+
+  ctx.font = `600 26px ${FONT_MONO}`;
+  const stackFit = fitCanvasText(ctx, stackText, 900, 26, 16, FONT_MONO, 600);
+  drawCanvasTextWithShadow(ctx, stackFit.text, 80, infoY + 120, `600 ${stackFit.size}px ${FONT_MONO}`, colors.secondaryText);
+
+  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', 80, infoY + 160, 300, 56, colors);
+
+  drawCircularStampSeal(ctx, 880, infoY + 160, 72, colors, 8);
+
+  // Barcode
+  let bx = 120;
+  const bars = [4, 2, 6, 2, 4, 8, 2, 4, 2, 6, 4, 2, 8, 2, 4, 6, 4, 2, 8, 4, 2, 6];
+  ctx.fillStyle = colors.secondaryText;
+  for (const b of bars) {
+    ctx.fillRect(bx, 1750, b, 54);
+    bx += b + 4;
+  }
+}
+
+/**
+ * -------------------------------------------------------------
+ * TEMPLATE 03: CIRCLE PFP (1200 x 1200)
  * -------------------------------------------------------------
  */
 async function renderCirclePFPTemplate(
@@ -648,7 +1000,6 @@ async function renderCirclePFPTemplate(
   canvas.width = 1200;
   canvas.height = 1200;
 
-  // Clip Canvas into ACTUAL CIRCLE
   ctx.save();
   ctx.beginPath();
   ctx.arc(600, 600, 580, 0, Math.PI * 2);
@@ -656,23 +1007,17 @@ async function renderCirclePFPTemplate(
 
   drawVibeBackground(ctx, 1200, 1200, vibeKey, colors);
 
-  // Outer Gold Border Ring
   ctx.strokeStyle = colors.borderInner;
   ctx.lineWidth = 18;
   ctx.beginPath();
   ctx.arc(600, 600, 560, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Top Center Arc Header
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 42px serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('HH GOA 2026', 600, 130);
+  drawCanvasTextWithShadow(ctx, 'HH GOA 2026', 600, 135, `900 46px ${FONT_DISPLAY}`, colors.primaryText, 'center');
 
-  // Center Circular Photo Box
   const cRadius = 300;
   const cX = 600;
-  const cY = 500;
+  const cY = 490;
 
   const imgObj = options.photo ? await loadImage(options.photo) : null;
   ctx.save();
@@ -693,30 +1038,27 @@ async function renderCirclePFPTemplate(
   ctx.arc(cX, cY, cRadius, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Name & Class
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 58px serif';
-  ctx.textAlign = 'center';
-  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), 600, 890);
+  const nameText = (options.name || 'PRIYANSHU KHARE').toUpperCase();
+  const stackText = (options.stack || 'PYTHON // NEXT.JS').toUpperCase();
 
-  ctx.fillStyle = colors.secondaryText;
-  ctx.font = '700 26px monospace';
-  ctx.fillText(`BUILDER ⚡ ${(options.builderClass || 'DATA DRIFTER').toUpperCase()}`, 600, 945);
+  ctx.font = `900 58px ${FONT_DISPLAY}`;
+  const nameFit = fitCanvasText(ctx, nameText, 760, 58, 24, FONT_DISPLAY, 900);
+  drawCanvasTextWithShadow(ctx, nameFit.text, 600, 875, `900 ${nameFit.size}px ${FONT_DISPLAY}`, colors.primaryText, 'center');
 
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '600 24px monospace';
-  ctx.fillText((options.stack || 'PYTHON // NEXT.JS').toUpperCase(), 600, 990);
+  drawClassBadgePill(ctx, options.builderClass || 'DATA DRIFTER', 600, 915, 48, colors, 'center');
 
-  // Builder ID Pill Badge
-  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', 600 - 130, 1015, 260, 48, colors);
+  ctx.font = `600 22px ${FONT_MONO}`;
+  const stackFit = fitCanvasText(ctx, stackText, 720, 22, 12, FONT_MONO, 600);
+  drawCanvasTextWithShadow(ctx, stackFit.text, 600, 995, `600 ${stackFit.size}px ${FONT_MONO}`, colors.secondaryText, 'center');
 
-  ctx.textAlign = 'left';
+  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', 600, 1025, 260, 48, colors, 'center');
+
   ctx.restore();
 }
 
 /**
  * -------------------------------------------------------------
- * TEMPLATE 04: ARCH BADGE (1200 x 1500 Arch Shaped Badge)
+ * TEMPLATE 04: ARCH BADGE (1200 x 1500)
  * -------------------------------------------------------------
  */
 async function renderArchBadgeTemplate(
@@ -729,7 +1071,6 @@ async function renderArchBadgeTemplate(
   canvas.width = 1200;
   canvas.height = 1500;
 
-  // Clip Canvas into ACTUAL ARCH SHAPE
   ctx.save();
   ctx.beginPath();
   ctx.arc(600, 460, 460, Math.PI, 0, false);
@@ -740,27 +1081,25 @@ async function renderArchBadgeTemplate(
 
   drawVibeBackground(ctx, 1200, 1500, vibeKey, colors);
 
-  // Outer Arch Border
   ctx.strokeStyle = colors.borderInner;
   ctx.lineWidth = 14;
   ctx.stroke();
 
-  // Arch Header Text
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 56px serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('HH GOA 2026', 600, 150);
+  drawCanvasTextWithShadow(ctx, 'HH GOA 2026', 600, 150, `900 56px ${FONT_DISPLAY}`, colors.primaryText, 'center');
 
-  // Photo Box Inside Arch
-  const pSize = 560;
-  const pX = 320;
-  const pY = 220;
+  const pSize = 580;
+  const pX = 310;
+  const pY = 210;
 
   ctx.fillStyle = colors.photoBoxBg;
   ctx.fillRect(pX, pY, pSize, pSize);
   ctx.strokeStyle = colors.borderOuter;
-  ctx.lineWidth = 6;
+  ctx.lineWidth = 8;
   ctx.strokeRect(pX, pY, pSize, pSize);
+
+  ctx.strokeStyle = colors.borderInner;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(pX + 6, pY + 6, pSize - 12, pSize - 12);
 
   const imgObj = options.photo ? await loadImage(options.photo) : null;
   if (imgObj) {
@@ -772,41 +1111,23 @@ async function renderArchBadgeTemplate(
     ctx.restore();
   }
 
-  // Right Circular Stamp
-  const stampX = 940;
-  const stampY = 650;
-  ctx.strokeStyle = colors.borderInner;
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.arc(stampX, stampY, 55, 0, Math.PI * 2);
-  ctx.stroke();
+  drawCircularStampSeal(ctx, 950, 640, 60, colors, 6);
 
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '800 14px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('BUILDER OF', stampX, stampY - 10);
-  ctx.font = '900 italic 22px serif';
-  ctx.fillStyle = colors.secondaryText;
-  ctx.fillText('GOA 2026', stampX, stampY + 16);
+  const nameText = (options.name || 'PRIYANSHU KHARE').toUpperCase();
+  const stackText = (options.stack || 'PYTHON // NEXT.JS').toUpperCase();
 
-  // Name & Details
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 62px serif';
-  ctx.textAlign = 'center';
-  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), 600, 870);
+  ctx.font = `900 62px ${FONT_DISPLAY}`;
+  const nameFit = fitCanvasText(ctx, nameText, 760, 62, 26, FONT_DISPLAY, 900);
+  drawCanvasTextWithShadow(ctx, nameFit.text, 600, 875, `900 ${nameFit.size}px ${FONT_DISPLAY}`, colors.primaryText, 'center');
 
-  ctx.fillStyle = colors.secondaryText;
-  ctx.font = '700 28px monospace';
-  ctx.fillText(`BUILDER ⚡ ${(options.builderClass || 'DATA DRIFTER').toUpperCase()}`, 600, 930);
+  drawClassBadgePill(ctx, options.builderClass || 'DATA DRIFTER', 600, 915, 50, colors, 'center');
 
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '600 26px monospace';
-  ctx.fillText((options.stack || 'PYTHON // NEXT.JS').toUpperCase(), 600, 980);
+  ctx.font = `600 24px ${FONT_MONO}`;
+  const stackFit = fitCanvasText(ctx, stackText, 700, 24, 12, FONT_MONO, 600);
+  drawCanvasTextWithShadow(ctx, stackFit.text, 600, 995, `600 ${stackFit.size}px ${FONT_MONO}`, colors.secondaryText, 'center');
 
-  // Builder ID Pill Badge
-  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', 600 - 130, 1010, 260, 50, colors);
+  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', 600, 1030, 270, 50, colors, 'center');
 
-  // Barcode Bottom
   const bottomY = 1380;
   let barcodeX = 350;
   const bars = [4, 2, 6, 2, 4, 8, 2, 4, 2, 6, 4, 2, 8, 2, 4, 6, 4, 2, 8, 4];
@@ -816,13 +1137,12 @@ async function renderArchBadgeTemplate(
     barcodeX += b + 4;
   }
 
-  ctx.textAlign = 'left';
   ctx.restore();
 }
 
 /**
  * -------------------------------------------------------------
- * TEMPLATE 05: SLIM BADGE (1600 x 600 Narrow Horizontal Badge)
+ * TEMPLATE 05: SLIM BADGE (1600 x 600)
  * -------------------------------------------------------------
  */
 async function renderSlimBadgeTemplate(
@@ -845,16 +1165,19 @@ async function renderSlimBadgeTemplate(
   ctx.lineWidth = 4;
   ctx.strokeRect(24, 24, 1552, 552);
 
-  // Photo Box Left
-  const pSize = 420;
+  const pSize = 440;
   const pX = 60;
-  const pY = 90;
+  const pY = 80;
 
   ctx.fillStyle = colors.photoBoxBg;
   ctx.fillRect(pX, pY, pSize, pSize);
   ctx.strokeStyle = colors.borderOuter;
-  ctx.lineWidth = 6;
+  ctx.lineWidth = 8;
   ctx.strokeRect(pX, pY, pSize, pSize);
+
+  ctx.strokeStyle = colors.borderInner;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(pX + 6, pY + 6, pSize - 12, pSize - 12);
 
   const imgObj = options.photo ? await loadImage(options.photo) : null;
   if (imgObj) {
@@ -866,43 +1189,25 @@ async function renderSlimBadgeTemplate(
     ctx.restore();
   }
 
-  // Center Column Info
-  const rX = 520;
+  const rX = 560;
+  const nameText = (options.name || 'PRIYANSHU KHARE').toUpperCase();
+  const stackText = (options.stack || 'PYTHON // NEXT.JS').toUpperCase();
 
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '900 58px serif';
-  ctx.fillText((options.name || 'PRIYANSHU KHARE').toUpperCase(), rX, 170);
+  ctx.font = `900 62px ${FONT_DISPLAY}`;
+  const nameFit = fitCanvasText(ctx, nameText, 800, 62, 26, FONT_DISPLAY, 900);
+  drawCanvasTextWithShadow(ctx, nameFit.text, rX, 160, `900 ${nameFit.size}px ${FONT_DISPLAY}`, colors.primaryText);
 
-  ctx.fillStyle = colors.secondaryText;
-  ctx.font = '700 26px monospace';
-  ctx.fillText(`BUILDER ⚡ ${(options.builderClass || 'DATA DRIFTER').toUpperCase()}`, rX, 230);
+  drawClassBadgePill(ctx, options.builderClass || 'DATA DRIFTER', rX, 195, 48, colors);
 
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '600 24px monospace';
-  ctx.fillText((options.stack || 'PYTHON // NEXT.JS').toUpperCase(), rX, 280);
+  ctx.font = `600 24px ${FONT_MONO}`;
+  const stackFit = fitCanvasText(ctx, stackText, 760, 24, 12, FONT_MONO, 600);
+  drawCanvasTextWithShadow(ctx, stackFit.text, rX, 280, `600 ${stackFit.size}px ${FONT_MONO}`, colors.secondaryText);
 
-  // Builder ID Pill Badge
-  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', rX, 310, 240, 48, colors);
+  drawBuilderIdPill(ctx, options.builderId || 'HH-26-7407', rX, 315, 260, 48, colors);
 
-  // Right Circular Stamp & Barcode
-  const stampX = 1380;
-  const stampY = 240;
-  ctx.strokeStyle = colors.borderInner;
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.arc(stampX, stampY, 70, 0, Math.PI * 2);
-  ctx.stroke();
+  drawCircularStampSeal(ctx, 1420, 250, 70, colors, 8);
 
-  ctx.fillStyle = colors.primaryText;
-  ctx.font = '800 16px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('BUILDER OF', stampX, stampY - 15);
-  ctx.font = '900 italic 28px serif';
-  ctx.fillStyle = colors.secondaryText;
-  ctx.fillText('GOA 2026', stampX, stampY + 20);
-  ctx.textAlign = 'left';
-
-  let bx = 1150;
+  let bx = 1180;
   const bars = [4, 2, 6, 2, 4, 8, 2, 4, 2, 6, 4, 2, 8, 2, 4, 6];
   ctx.fillStyle = colors.secondaryText;
   for (const b of bars) {
@@ -922,6 +1227,14 @@ async function drawCardOnCanvas(canvas: HTMLCanvasElement, options: RenderOption
 
   if (fmt === 'landscape') {
     await renderLandscapeTemplate(canvas, ctx, options, vibeKey, colors);
+    return;
+  }
+  if (fmt === 'square') {
+    await renderSquareTemplate(canvas, ctx, options, vibeKey, colors);
+    return;
+  }
+  if (fmt === 'story') {
+    await renderStoryTemplate(canvas, ctx, options, vibeKey, colors);
     return;
   }
   if (fmt === 'circle' || fmt === 'pfp') {

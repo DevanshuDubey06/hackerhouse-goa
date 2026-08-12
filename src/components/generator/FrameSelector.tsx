@@ -12,7 +12,7 @@ interface FrameSelectorProps {
 
 const styleGradients: Record<string, string> = {
   monsoon: 'linear-gradient(135deg, #1E5B3A 0%, #2d5a3f 50%, #163D28 100%)',
-  sunburst: 'linear-gradient(135deg, #f5a623 0%, #F5DD3B 50%, #e8941a 100%)',
+  sunburst: 'linear-gradient(135deg, #3B1306 0%, #6E2208 50%, #210A03 100%)',
   night: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
   sea: 'linear-gradient(135deg, #1e6091 0%, #2980b9 50%, #1a5276 100%)',
 };

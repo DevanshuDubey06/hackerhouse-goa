@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -21,6 +21,7 @@ const STRIP_PATTERN = `url("data:image/svg+xml,%3Csvg width='60' height='22' vie
 
 export default function PublicIDPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const publicId = params.publicId as string;
 
   // Builder data loaded from storage
@@ -42,6 +43,22 @@ export default function PublicIDPage() {
   const [downloadingFormat, setDownloadingFormat] = useState<string | null>(null);
 
   useEffect(() => {
+    const urlName = searchParams.get('name');
+    const urlStack = searchParams.get('stack');
+    const urlBuilderClass = searchParams.get('builderClass');
+    const urlBuilderId = searchParams.get('builderId');
+    const urlVibe = searchParams.get('vibe');
+    const urlFrame = searchParams.get('frame');
+    const urlImage = searchParams.get('image');
+
+    if (urlName) setName(urlName);
+    if (urlStack) setStack(urlStack);
+    if (urlBuilderClass) setBuilderClass(urlBuilderClass);
+    if (urlBuilderId) setBuilderId(urlBuilderId);
+    if (urlVibe) setVibe(urlVibe);
+    if (urlFrame) setFrame(urlFrame);
+    if (urlImage) setPreviewDataUrl(urlImage);
+
     // Try structured storage first
     const data = getBuilderByPublicId(publicId?.toUpperCase());
     if (data) {
@@ -55,19 +72,48 @@ export default function PublicIDPage() {
       if (data.photoDataUrl) setPhotoUrl(data.photoDataUrl);
     } else if (typeof window !== 'undefined') {
       const opts = getCurrentBuilderOptions();
-      setName(opts.name);
-      setStack(opts.stack);
-      setBuilderClass(opts.builderClass);
+      setName(urlName || opts.name);
+      setStack(urlStack || opts.stack);
+      setBuilderClass(urlBuilderClass || opts.builderClass);
       if (opts.photo) setPhotoUrl(opts.photo);
-      setBuilderId(opts.builderId);
-      if (opts.vibe) setVibe(opts.vibe);
-      if (opts.frame) setFrame(opts.frame);
+      setBuilderId(urlBuilderId || opts.builderId);
+      if (urlVibe) setVibe(urlVibe);
+      else if (opts.vibe) setVibe(opts.vibe);
+      if (urlFrame) setFrame(urlFrame);
+      else if (opts.frame) setFrame(opts.frame);
 
       if (!opts.name && !data) {
         setNotFound(true);
       }
     }
-  }, [publicId]);
+  }, [publicId, searchParams]);
+
+  useEffect(() => {
+    if (!previewDataUrl) return;
+
+    const setMeta = (selector: string, attribute: string, content: string) => {
+      let tag = document.head.querySelector(selector) as HTMLMetaElement | null;
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', selector.includes('og:') ? selector.replace('meta[property="', '').replace('"]', '') : '');
+        if (selector.includes('twitter:')) {
+          tag.setAttribute('name', selector.replace('meta[name="', '').replace('"]', ''));
+        }
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute(attribute, content);
+    };
+
+    setMeta('meta[property="og:title"]', 'content', `${name} | Hacker House Goa Builder ID`);
+    setMeta('meta[property="og:description"]', 'content', `${builderClass} • ${stack}`);
+    setMeta('meta[property="og:image"]', 'content', previewDataUrl);
+    setMeta('meta[property="og:image:alt"]', 'content', `${name} Builder ID card`);
+    setMeta('meta[property="og:type"]', 'content', 'website');
+    setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
+    setMeta('meta[name="twitter:title"]', 'content', `${name} | Hacker House Goa`);
+    setMeta('meta[name="twitter:description"]', 'content', `${builderClass} • ${stack}`);
+    setMeta('meta[name="twitter:image"]', 'content', previewDataUrl);
+  }, [previewDataUrl, name, builderClass, stack]);
 
   // Update live preview image matching chosen Vibe & Frame
   useEffect(() => {
@@ -112,8 +158,9 @@ export default function PublicIDPage() {
   // Share to X
   const handleShareToX = () => {
     const text = SHARE_TEXT(builderClass, builderId);
+    const publicUrl = `${window.location.origin}/id/${builderId}`;
     window.open(
-      `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`,
+      `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(publicUrl)}`,
       '_blank',
       'noopener,noreferrer'
     );
