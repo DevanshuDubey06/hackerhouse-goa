@@ -66,9 +66,39 @@ const STRIP_PATTERN = `url("data:image/svg+xml,%3Csvg width='60' height='22' vie
 export function Hero() {
   return (
     <section
-      className="relative min-h-[calc(100dvh-5.75rem)] flex flex-col bg-[#1E5B3A] overflow-hidden"
+      className="relative min-h-[calc(100dvh-5.75rem)] flex flex-col bg-[#163D28] overflow-hidden"
       id="hero"
     >
+      {/* ─── Integrated Full-Bleed Goa Illustration Background Composition (IMAGE 2 Style) ─── */}
+      <div className="absolute inset-0 z-[0] pointer-events-none overflow-hidden">
+        <div className="absolute top-0 right-0 w-full lg:w-[68%] xl:w-[65%] h-full">
+          <Image
+            src="/hero-illustration.png"
+            alt="Vintage Goan Portuguese beach house with palm trees, sunset over the ocean, and beach deck chair"
+            fill
+            priority
+            className="object-cover object-right-bottom opacity-95"
+            sizes="(max-width: 1024px) 100vw, 68vw"
+          />
+
+          {/* Left-to-right fade gradient blending illustration into dark green sky background */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(to right, #163D28 0%, rgba(22, 61, 40, 0.85) 20%, rgba(22, 61, 40, 0.3) 50%, transparent 80%)',
+            }}
+          />
+
+          {/* Top & bottom subtle gradient vignette */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(to bottom, rgba(22, 61, 40, 0.4) 0%, transparent 15%, transparent 85%, #163D28 100%)',
+            }}
+          />
+        </div>
+      </div>
+
       {/* Grain texture overlay */}
       <div className="absolute inset-0 pointer-events-none z-[1]" aria-hidden="true"
         style={{
@@ -85,13 +115,13 @@ export function Hero() {
         }}
       />
 
-      {/* ─── Main Content ─── */}
+      {/* ─── Main Content Layer ─── */}
       <div className="flex-1 relative z-[2] flex items-center">
-        <div className="max-container section-padding w-full py-8 md:py-10 lg:py-0">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.9fr] gap-6 lg:gap-8 items-center">
+        <div className="max-container section-padding w-full py-10 lg:py-14">
+          <div className="max-w-2xl">
 
-            {/* ── Left: Text Content ── */}
-            <div className="relative z-10 max-w-2xl">
+            {/* ── Text Content ── */}
+            <div className="relative z-10">
 
               {/* Eyebrow */}
               <motion.div
@@ -126,7 +156,7 @@ export function Hero() {
                 transition={{ duration: 0.4, delay: 0.2 }}
                 className="mt-5 md:mt-7 max-w-[26rem]"
               >
-                <p className="font-mono text-[11.5px] md:text-[13px] text-[#F6F0D8]/75 leading-[1.75]">
+                <p className="font-mono text-[11.5px] md:text-[13px] text-[#F6F0D8]/85 leading-[1.75]">
                   Build your official Hacker House Goa 2026 Builder ID.
                   <br />
                   Pick your builder class. Add your stack. Choose your frame.
@@ -140,11 +170,11 @@ export function Hero() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.3 }}
-                className="mt-7 md:mt-8 flex flex-wrap items-center gap-3"
+                className="mt-6 md:mt-7 flex flex-wrap items-center gap-3"
               >
                 <Link
                   href="/create"
-                  className="inline-flex items-center gap-2 px-5 md:px-6 py-3 bg-transparent text-[#F6F0D8] font-mono text-[10.5px] md:text-[11.5px] font-bold uppercase tracking-[0.1em] border-2 border-[#F6F0D8]/70 hover:bg-[#F6F0D8] hover:text-[#17251C] transition-all duration-150 no-underline shadow-[2px_2px_0px_rgba(23,37,28,0.4)]"
+                  className="inline-flex items-center gap-2 px-5 md:px-6 py-3 bg-[#F5DD3B] text-[#17251C] font-mono text-[11px] md:text-xs font-bold uppercase tracking-[0.08em] border-2 border-[#17251C] shadow-[2px_2px_0px_#17251C] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_#17251C] active:translate-x-[1px] active:translate-y-[1px] transition-all no-underline"
                 >
                   BUILD MY BUILDER ID <span className="text-[15px] leading-none">→</span>
                 </Link>
@@ -153,108 +183,80 @@ export function Hero() {
                   href={CHECK_HYPE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 md:px-6 py-3 bg-transparent text-[#F6F0D8]/60 font-mono text-[10.5px] md:text-[11.5px] font-bold uppercase tracking-[0.1em] border border-[#F6F0D8]/25 hover:border-[#F6F0D8]/50 hover:text-[#F6F0D8] transition-all duration-150 no-underline"
+                  className="inline-flex items-center gap-2 px-5 md:px-6 py-3 bg-transparent text-[#F6F0D8]/90 font-mono text-[10.5px] md:text-[11.5px] font-bold uppercase tracking-[0.1em] border border-[#F5DD3B]/40 hover:border-[#F5DD3B] hover:text-[#F5DD3B] transition-all duration-150 no-underline"
                 >
                   CHECK THE HYPE <span className="text-[15px] leading-none">↗</span>
                 </a>
               </motion.div>
+
+              {/* Free Badge */}
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.35 }}
+                className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded bg-[#E62E78]/10 border border-[#E62E78]/40"
+              >
+                <span className="font-mono text-[10px] text-[#E62E78] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="text-[12px]">🎴</span> NO SIGN-UP · FREE TO CREATE
+                </span>
+              </motion.div>
             </div>
-
-            {/* ── Right: Illustration ── */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.7, delay: 0.15 }}
-              className="relative hidden lg:flex items-center justify-end"
-            >
-              <div className="relative w-full max-w-[580px] xl:max-w-[640px]">
-                <Image
-                  src="/hero-illustration.png"
-                  alt="Vintage illustration of a Goan Portuguese beach house with palm trees, sunset over the ocean, and a deck chair"
-                  width={800}
-                  height={800}
-                  priority
-                  className="w-full h-auto object-contain"
-                  style={{
-                    filter: 'drop-shadow(0 8px 40px rgba(0,0,0,0.25))',
-                  }}
-                />
-              </div>
-            </motion.div>
-
-            {/* Mobile illustration — smaller, below text */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="lg:hidden relative flex justify-center mt-2"
-            >
-              <div className="relative w-full max-w-[320px] sm:max-w-[400px]">
-                <Image
-                  src="/hero-illustration.png"
-                  alt="Goan beach house illustration"
-                  width={600}
-                  height={600}
-                  className="w-full h-auto object-contain opacity-90"
-                />
-              </div>
-            </motion.div>
           </div>
         </div>
       </div>
 
-      {/* ─── Stats Bar ─── */}
-      <div className="relative z-[2] w-full bg-[#163D28] border-t-2 border-[#17251C]">
-        <div className="max-container section-padding">
+      {/* ─── Stats Bar Container ─── */}
+      <div className="relative z-[2] w-full max-w-5xl mx-auto px-4 pb-6 pt-4">
+        <div className="bg-[#0F2E1D]/85 border-2 border-[#F6F0D8]/20 rounded-xl p-3 md:p-4 backdrop-blur-sm shadow-[4px_4px_0px_rgba(23,37,28,0.3)]">
           <div className="grid grid-cols-2 md:grid-cols-4 text-[#F6F0D8]">
 
             {/* Stat: Builders */}
-            <div className="flex items-center gap-2.5 py-3.5 md:py-4 pr-4 border-r border-[#F6F0D8]/8 border-b md:border-b-0 border-[#F6F0D8]/8">
-              <div className="text-[#F5DD3B]/60">
+            <div className="flex items-center gap-2.5 py-2 md:py-3 pr-4 border-r border-[#F6F0D8]/12 border-b md:border-b-0 border-[#F6F0D8]/12">
+              <div className="text-[#F5DD3B]/70">
                 <IconBuilders />
               </div>
               <div>
                 <div className="flex items-baseline gap-1.5">
                   <span className="font-display text-lg md:text-xl font-black text-[#F6F0D8] leading-none">500</span>
-                  <span className="font-mono text-[9px] md:text-[10px] font-bold text-[#F6F0D8]/70 uppercase tracking-[0.12em]">Builders</span>
+                  <span className="font-mono text-[9px] md:text-[10px] font-bold text-[#F6F0D8]/80 uppercase tracking-[0.12em]">Builders</span>
                 </div>
-                <p className="font-mono text-[9px] text-[#F6F0D8]/35 mt-0.5 italic">Build together.</p>
+                <p className="font-mono text-[9px] text-[#F6F0D8]/45 mt-0.5 italic">Build together.</p>
               </div>
             </div>
 
             {/* Stat: Days */}
-            <div className="flex items-center gap-2.5 py-3.5 md:py-4 px-4 md:border-r border-[#F6F0D8]/8 border-b md:border-b-0 border-[#F6F0D8]/8">
-              <div className="text-[#F5DD3B]/60">
+            <div className="flex items-center gap-2.5 py-2 md:py-3 px-4 md:border-r border-[#F6F0D8]/12 border-b md:border-b-0 border-[#F6F0D8]/12">
+              <div className="text-[#F5DD3B]/70">
                 <IconClock />
               </div>
               <div>
                 <div className="flex items-baseline gap-1.5">
                   <span className="font-display text-lg md:text-xl font-black text-[#F6F0D8] leading-none">4</span>
-                  <span className="font-mono text-[9px] md:text-[10px] font-bold text-[#F6F0D8]/70 uppercase tracking-[0.12em]">Days</span>
+                  <span className="font-mono text-[9px] md:text-[10px] font-bold text-[#F6F0D8]/80 uppercase tracking-[0.12em]">Days</span>
                 </div>
-                <p className="font-mono text-[9px] text-[#F6F0D8]/35 mt-0.5 italic">Non-stop building.</p>
+                <p className="font-mono text-[9px] text-[#F6F0D8]/45 mt-0.5 italic">Non-stop building.</p>
               </div>
             </div>
 
             {/* Stat: Location */}
-            <div className="flex items-center gap-2.5 py-3.5 md:py-4 px-4 md:border-r border-[#F6F0D8]/8">
-              <div className="text-[#F5DD3B]/60">
+            <div className="flex items-center gap-2.5 py-2 md:py-3 px-4 md:border-r border-[#F6F0D8]/12">
+              <div className="text-[#F5DD3B]/70">
                 <IconPalm />
               </div>
               <div>
                 <span className="font-display text-sm md:text-base font-black text-[#F6F0D8] leading-none uppercase tracking-tight">Goa, India</span>
-                <p className="font-mono text-[9px] text-[#F6F0D8]/35 mt-0.5 italic">Beach × Bytes.</p>
+                <p className="font-mono text-[9px] text-[#F6F0D8]/45 mt-0.5 italic">Beach × Bytes.</p>
               </div>
             </div>
 
             {/* Stat: Dates */}
-            <div className="flex items-center gap-2.5 py-3.5 md:py-4 pl-4">
-              <div className="text-[#F5DD3B]/60">
+            <div className="flex items-center gap-2.5 py-2 md:py-3 pl-4">
+              <div className="text-[#F5DD3B]/70">
                 <IconCalendar />
               </div>
               <div>
                 <span className="font-display text-sm md:text-base font-black text-[#F6F0D8] leading-none uppercase tracking-tight">28—31 Oct 2026</span>
-                <p className="font-mono text-[9px] text-[#F6F0D8]/35 mt-0.5 italic">Save the dates.</p>
+                <p className="font-mono text-[9px] text-[#F6F0D8]/45 mt-0.5 italic">Save the dates.</p>
               </div>
             </div>
           </div>
