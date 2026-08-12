@@ -255,12 +255,10 @@ export function Hero() {
 
       {/* ─── Decorative Goan Pattern Strip ─── */}
       <div
-        className="h-[22px] bg-repeat-x"
+        className="w-full h-[22px] bg-repeat-x relative z-[2]"
         style={{
           backgroundImage: STRIP_PATTERN,
           backgroundSize: '60px 22px',
-          width: '100vw',
-          marginLeft: 'calc(-50vw + 50%)',
         }}
         aria-hidden="true"
       />
